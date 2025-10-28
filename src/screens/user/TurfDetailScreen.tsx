@@ -1,20 +1,8 @@
 /**
- * TurfDetailScreen - Integrated turf details and booking functionality
- * 
- * This screen combines:
- * - Turf details (images, description, pricing, contact)
- * - Date selection and time slot booking
- * - Unified user experience for viewing and booking turfs
- * 
- * Features:
- * - Image gallery with scrollable carousel and sliding animation
- * - Toggle between details view and booking view
- * - Real-time slot availability
- * - Integrated booking confirmation
- * - Parallax scrolling with sliding image transitions
+ * TurfDetailScreen - Enhanced with sliding image animation
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -28,6 +16,7 @@ import {
   Animated,
   Linking,
   Modal,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -62,13 +51,18 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [showBookingSection, setShowBookingSection] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
   
-  // Animation refs and values for parallax and sliding effects
+  // Refs
   const scrollViewRef = React.useRef<ScrollView>(null);
-  const backgroundScrollRef = React.useRef<ScrollView>(null);
-  const scrollY = React.useRef(new Animated.Value(0)).current;
+  const imageScrollViewRef = React.useRef<ScrollView>(null);
   
-  // Parallax constants
+  // Animation values
+  const scrollY = React.useRef(new Animated.Value(0)).current;
+  const imageScrollX = React.useRef(new Animated.Value(0)).current;
+  const contentOpacity = React.useRef(new Animated.Value(1)).current;
+  
+  // Constants
   const HEADER_MAX_HEIGHT = 300;
   const HEADER_MIN_HEIGHT = 100;
   const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
@@ -95,13 +89,6 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
     try {
       const response = await turfAPI.getTurfById(turfId);
       setTurf(response.data);
-      
-      // Debug log to see the image data structure
-      console.log('Turf data:', response.data);
-      console.log('Turf images array:', response.data.images);
-      console.log('Turf single image:', response.data.image);
-      
-      // Reset image index when new turf data is loaded
       setCurrentImageIndex(0);
     } catch (error) {
       Toast.show({
@@ -124,7 +111,6 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
       // API returns a simple double value like 1500.0 directly
       setMinPrice(response.data);
     } catch (error) {
-      console.log('Failed to fetch minimum price:', error);
       // If API fails, we'll show loading state or handle gracefully
       setMinPrice(null);
     } finally {
@@ -152,9 +138,12 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
   };
 
   const toggleSlotSelection = (slot: TimeSlot) => {
-    if (!slot.isAvailable) return;
+    if (!slot.isAvailable) {
+      return;
+    }
 
     const isSelected = selectedSlots.find(s => s.id === slot.id);
+    
     if (isSelected) {
       setSelectedSlots(selectedSlots.filter(s => s.id !== slot.id));
     } else {
@@ -216,15 +205,72 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
     }
   };
 
-  const handleBookNow = () => {
-    setShowBookingSection(true);
+  const handleBookNow = useCallback(() => {
+    // Stage 1: Clear selected slots immediately for faster state update
     setSelectedSlots([]);
     
-    // Scroll to booking section with a slight delay for state update
+    // Stage 2: Fade out content slightly for smooth transition
+    Animated.timing(contentOpacity, {
+      toValue: 0.7,
+      duration: 150,
+      useNativeDriver: true,
+    }).start();
+    
+    // Stage 3: Update state and scroll to booking section
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
+      setShowBookingSection(true);
+      
+      // Stage 4: Scroll to end with animation
+      requestAnimationFrame(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+        
+        // Stage 5: Fade content back in
+        setTimeout(() => {
+          Animated.timing(contentOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
+        }, 200);
+      });
     }, 100);
-  };
+  }, [contentOpacity]);
+
+  const handleBackToDetails = useCallback(() => {
+    // Stage 1: Start transition with visual feedback
+    setIsTransitioning(true);
+    setSelectedSlots([]);
+    
+    // Stage 2: Fade out content for smooth transition
+    Animated.timing(contentOpacity, {
+      toValue: 0.3,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+    
+    // Stage 3: Smooth scroll animation
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ 
+        y: 0, 
+        animated: true 
+      });
+      
+      // Stage 4: Update state and fade content back in
+      setTimeout(() => {
+        setShowBookingSection(false);
+        
+        // Stage 5: Fade content back in with a slight delay
+        setTimeout(() => {
+          Animated.timing(contentOpacity, {
+            toValue: 1,
+            duration: 300,
+            useNativeDriver: true,
+          }).start();
+          setIsTransitioning(false);
+        }, 100);
+      }, 350); // Wait for scroll to complete
+    }, 100);
+  }, [contentOpacity]);
 
   const handleCallTurf = async () => {
     if (!turf?.contactNumber) return;
@@ -254,7 +300,6 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
   const handleDateSelect = (date: Date) => {
     setSelectedDate(date);
     setSelectedSlots([]); // Reset selected slots when date changes
-    console.log('📅 Date selected:', format(date, 'yyyy-MM-dd'));
   };
 
   const renderCalendar = () => {
@@ -282,71 +327,64 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
   };
 
   const renderImageGallery = () => {
-    // Use actual turf images from API response
     const images = turf?.images && turf.images.length > 0 
       ? turf.images 
       : turf?.image 
         ? [turf.image] 
-        : ['https://images.unsplash.com/photo-1574629810360-7efbbe195018?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80']; // Fallback image
+        : ['https://images.unsplash.com/photo-1574629810360-7efbbe195018?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'];
 
     const handleImageScroll = (event: any) => {
       const contentOffset = event.nativeEvent.contentOffset;
       const imageIndex = Math.round(contentOffset.x / screenWidth);
-      setCurrentImageIndex(Math.max(0, Math.min(imageIndex, images.length - 1)));
+      const newIndex = Math.max(0, Math.min(imageIndex, images.length - 1));
       
-      // Sync background scroll with foreground for sliding effect
-      if (backgroundScrollRef.current) {
-        backgroundScrollRef.current.scrollTo({ 
-          x: contentOffset.x, 
-          y: 0, 
-          animated: false 
+      // Optimize for Android performance
+      if (Platform.OS === 'android') {
+        requestAnimationFrame(() => {
+          setCurrentImageIndex(newIndex);
         });
+      } else {
+        setCurrentImageIndex(newIndex);
       }
     };
 
-    // Enhanced animated styles for smoother parallax effect
+    // Animation interpolations
     const headerHeight = scrollY.interpolate({
       inputRange: [0, HEADER_SCROLL_DISTANCE],
       outputRange: [HEADER_MAX_HEIGHT, HEADER_MIN_HEIGHT],
       extrapolate: 'clamp',
     });
 
-    // Smoother scaling with easing
     const imageScale = scrollY.interpolate({
       inputRange: [-200, -100, 0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
       outputRange: [1.5, 1.3, 1, 0.98, 0.95],
       extrapolate: 'clamp',
     });
 
-    // Gentle translation for depth effect
     const imageTranslateY = scrollY.interpolate({
       inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
       outputRange: [0, -15, -30],
       extrapolate: 'clamp',
     });
 
-    // Refined bounce effect with smoother curves
     const bounceScale = scrollY.interpolate({
       inputRange: [-100, -50, 0],
       outputRange: [1.08, 1.04, 1],
       extrapolate: 'clamp',
     });
 
-    // Smoother overlay transition
     const overlayOpacity = scrollY.interpolate({
       inputRange: [0, HEADER_SCROLL_DISTANCE / 4, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
       outputRange: [0, 0.1, 0.3, 0.6],
       extrapolate: 'clamp',
     });
 
-    // Enhanced button opacity transition
     const backButtonOpacity = scrollY.interpolate({
       inputRange: [0, HEADER_SCROLL_DISTANCE / 4, HEADER_SCROLL_DISTANCE / 2],
       outputRange: [1, 0.9, 0.7],
       extrapolate: 'clamp',
     });
 
-    // Smoother title animation with better timing
     const titleOpacity = scrollY.interpolate({
       inputRange: [HEADER_SCROLL_DISTANCE - 80, HEADER_SCROLL_DISTANCE - 40, HEADER_SCROLL_DISTANCE - 10],
       outputRange: [0, 0.5, 1],
@@ -359,7 +397,6 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
       extrapolate: 'clamp',
     });
 
-    // Scale animation for title
     const titleScale = scrollY.interpolate({
       inputRange: [HEADER_SCROLL_DISTANCE - 80, HEADER_SCROLL_DISTANCE - 10],
       outputRange: [0.8, 1],
@@ -368,10 +405,10 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
 
     return (
       <Animated.View style={[styles.imageGalleryContainer, { height: headerHeight }]}>
-        {/* Background layer with sliding animation and parallax effect */}
+        {/* Sliding background images with parallax */}
         <Animated.View 
           style={[
-            styles.backgroundImageContainer,
+            styles.backgroundContainer,
             {
               transform: [
                 { scale: imageScale },
@@ -381,75 +418,161 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
             }
           ]}
         >
-          {/* Sliding background images container */}
-          <ScrollView
-            ref={backgroundScrollRef}
+          <Animated.ScrollView
             horizontal
             pagingEnabled
             showsHorizontalScrollIndicator={false}
-            scrollEnabled={false} // Disable direct interaction, controlled by foreground
+            scrollEnabled={false}
             style={styles.backgroundScrollView}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { x: imageScrollX } } }],
+              { useNativeDriver: false }
+            )}
+            scrollEventThrottle={1}
           >
-            {images.map((imageUri, index) => (
-              <Image 
-                key={`bg-${index}`}
-                source={{ uri: imageUri }}
-                style={styles.backgroundImage}
-                resizeMode="cover"
-              />
-            ))}
-          </ScrollView>
+            {images.map((imageUri, index) => {
+              // Create sliding animation for each background image
+              const imageTranslateX = imageScrollX.interpolate({
+                inputRange: [
+                  (index - 1) * screenWidth,
+                  index * screenWidth,
+                  (index + 1) * screenWidth,
+                ],
+                outputRange: [screenWidth * 0.3, 0, -screenWidth * 0.3],
+                extrapolate: 'clamp',
+              });
+
+              const imageOpacity = imageScrollX.interpolate({
+                inputRange: [
+                  (index - 1) * screenWidth,
+                  index * screenWidth,
+                  (index + 1) * screenWidth,
+                ],
+                outputRange: [0.7, 1, 0.7],
+                extrapolate: 'clamp',
+              });
+
+              const imageBackgroundScale = imageScrollX.interpolate({
+                inputRange: [
+                  (index - 1) * screenWidth,
+                  index * screenWidth,
+                  (index + 1) * screenWidth,
+                ],
+                outputRange: [0.95, 1, 0.95],
+                extrapolate: 'clamp',
+              });
+
+              return (
+                <Animated.View
+                  key={`bg-${index}`}
+                  style={[
+                    styles.backgroundImageWrapper,
+                    {
+                      transform: [
+                        { translateX: imageTranslateX },
+                        { scale: imageBackgroundScale },
+                      ],
+                      opacity: imageOpacity,
+                    }
+                  ]}
+                >
+                  <Image 
+                    source={{ uri: imageUri }}
+                    style={styles.backgroundImage}
+                    resizeMode="cover"
+                  />
+                </Animated.View>
+              );
+            })}
+          </Animated.ScrollView>
         </Animated.View>
         
-        {/* Foreground scrollable layer for touch handling */}
-        <View style={styles.foregroundImageContainer}>
-          <ScrollView 
+        {/* Transparent foreground for touch handling */}
+        <View style={styles.foregroundContainer}>
+          <Animated.ScrollView 
+            ref={imageScrollViewRef}
             horizontal 
             pagingEnabled 
             showsHorizontalScrollIndicator={false}
-            style={styles.imageScrollView}
-            onScroll={handleImageScroll}
-            scrollEventThrottle={6}
-            decelerationRate="fast"
-            bounces={false}
+            style={styles.foregroundScrollView}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { x: imageScrollX } } }],
+              { 
+                useNativeDriver: false,
+                listener: handleImageScroll,
+              }
+            )}
+            scrollEventThrottle={Platform.OS === 'ios' ? 1 : 16}
+            decelerationRate={Platform.OS === 'ios' ? 'fast' : 'normal'}
+            bounces={Platform.OS === 'ios'}
             scrollEnabled={images.length > 1}
             snapToInterval={screenWidth}
             snapToAlignment="start"
             directionalLockEnabled={true}
+            overScrollMode={Platform.OS === 'android' ? 'never' : 'auto'}
+            nestedScrollEnabled={Platform.OS === 'android'}
           >
-            {images.map((imageUri, index) => (
-              <View key={index} style={styles.imageContainer}>
-                {imageErrors[imageUri] ? (
-                  <View style={[styles.imagePlaceholder, { backgroundColor: theme.colors.lightGray }]}>
-                    <Ionicons name="image-outline" size={64} color={theme.colors.gray} />
-                    <Text style={[styles.placeholderText, { color: theme.colors.textSecondary }]}>
-                      Image not available
-                    </Text>
-                  </View>
-                ) : (
-                  <>
-                    <View style={styles.transparentOverlay} />
-                    {imageLoadingStates[imageUri] && (
-                      <View style={styles.imageLoader}>
-                        <ActivityIndicator size="large" color={theme.colors.primary} />
-                      </View>
-                    )}
-                  </>
-                )}
-              </View>
-            ))}
-          </ScrollView>
+            {images.map((imageUri, index) => {
+              // Create sliding animation for each foreground image
+              const foregroundTranslateX = imageScrollX.interpolate({
+                inputRange: [
+                  (index - 1) * screenWidth,
+                  index * screenWidth,
+                  (index + 1) * screenWidth,
+                ],
+                outputRange: Platform.OS === 'ios' ? [screenWidth * 0.2, 0, -screenWidth * 0.2] : [0, 0, 0],
+                extrapolate: 'clamp',
+              });
+
+              const foregroundOpacity = imageScrollX.interpolate({
+                inputRange: [
+                  (index - 1) * screenWidth,
+                  index * screenWidth,
+                  (index + 1) * screenWidth,
+                ],
+                outputRange: [0.8, 1, 0.8],
+                extrapolate: 'clamp',
+              });
+
+              return (
+                <Animated.View 
+                  key={index} 
+                  style={[
+                    styles.imageContainer,
+                    {
+                      transform: [{ translateX: foregroundTranslateX }],
+                      opacity: foregroundOpacity,
+                    }
+                  ]}
+                >
+                  {imageErrors[imageUri] ? (
+                    <View style={[styles.imagePlaceholder, { backgroundColor: theme.colors.lightGray }]}>
+                      <Ionicons name="image-outline" size={64} color={theme.colors.gray} />
+                      <Text style={[styles.placeholderText, { color: theme.colors.textSecondary }]}>
+                        Image not available
+                      </Text>
+                    </View>
+                  ) : (
+                    <>
+                      <View style={styles.transparentImage} />
+                      {imageLoadingStates[imageUri] && (
+                        <View style={styles.imageLoader}>
+                          <ActivityIndicator size="large" color={theme.colors.primary} />
+                        </View>
+                      )}
+                    </>
+                  )}
+                </Animated.View>
+              );
+            })}
+          </Animated.ScrollView>
         </View>
         
-        {/* Enhanced dark overlay with smoother transition */}
+        {/* UI Overlays */}
         <Animated.View 
-          style={[
-            styles.scrollOverlay,
-            { opacity: overlayOpacity }
-          ]} 
+          style={[styles.scrollOverlay, { opacity: overlayOpacity }]} 
         />
         
-        {/* Animated back button with better visibility */}
         <Animated.View style={[styles.backButton, { opacity: backButtonOpacity }]}>
           <TouchableOpacity
             onPress={() => navigation.goBack()}
@@ -460,7 +583,6 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
           </TouchableOpacity>
         </Animated.View>
 
-        {/* Enhanced animated title with scale effect */}
         <Animated.View 
           style={[
             styles.collapsedTitle,
@@ -478,13 +600,9 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
           </Text>
         </Animated.View>
 
-        {/* Enhanced image indicators with smoother animations */}
         {images.length > 1 && (
           <Animated.View 
-            style={[
-              styles.imageIndicators,
-              { opacity: backButtonOpacity }
-            ]}
+            style={[styles.imageIndicators, { opacity: backButtonOpacity }]}
           >
             {images.map((_, index) => (
               <Animated.View 
@@ -493,9 +611,7 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
                   styles.indicator, 
                   { 
                     backgroundColor: index === currentImageIndex ? '#FFFFFF' : 'rgba(255,255,255,0.4)',
-                    transform: [{ 
-                      scale: index === currentImageIndex ? 1.3 : 1 
-                    }],
+                    transform: [{ scale: index === currentImageIndex ? 1.3 : 1 }],
                     opacity: index === currentImageIndex ? 1 : 0.7
                   }
                 ]} 
@@ -504,13 +620,9 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
           </Animated.View>
         )}
 
-        {/* Enhanced image counter with better styling */}
         {images.length > 1 && (
           <Animated.View 
-            style={[
-              styles.imageCounter,
-              { opacity: backButtonOpacity }
-            ]}
+            style={[styles.imageCounter, { opacity: backButtonOpacity }]}
           >
             <Text style={styles.imageCounterText}>
               {currentImageIndex + 1} / {images.length}
@@ -538,16 +650,25 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
           [{ nativeEvent: { contentOffset: { y: scrollY } } }],
           { useNativeDriver: false }
         )}
-        scrollEventThrottle={4}
-        bounces={true}
+        scrollEventThrottle={Platform.OS === 'ios' ? 4 : 16}
+        bounces={Platform.OS === 'ios'}
         bouncesZoom={false}
         showsVerticalScrollIndicator={false}
         decelerationRate="normal"
-        overScrollMode="always"
+        nestedScrollEnabled={Platform.OS === 'android'}
+        overScrollMode={Platform.OS === 'android' ? 'never' : 'auto'}
       >
         {renderImageGallery()}
         
-        <View style={[styles.content, { backgroundColor: theme.colors.background }]}>
+        <Animated.View 
+          style={[
+            styles.content, 
+            { 
+              backgroundColor: theme.colors.background,
+              opacity: contentOpacity 
+            }
+          ]}
+        >
           <View style={styles.header}>
             <View style={styles.titleContainer}>
               <Text style={[styles.title, { color: theme.colors.text }]}>{turf.name}</Text>
@@ -630,12 +751,13 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
                   <Ionicons name="chevron-down" size={16} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
                 <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>
-                  You can only book slots for today and tomorrow
+                  Select any date from today onwards
                 </Text>
               </View>
 
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Available Time Slots</Text>
+                
                 {slotsLoading ? (
                   <View style={styles.slotsLoader}>
                     <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -683,7 +805,7 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
               )}
             </>
           )}
-        </View>
+        </Animated.View>
       </Animated.ScrollView>
 
       <View style={[styles.footer, { 
@@ -718,10 +840,8 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
             </View>
             <Button
               title={showBookingSection ? "Back to Details" : "Book Now"}
-              onPress={showBookingSection ? () => {
-                setShowBookingSection(false);
-                scrollViewRef.current?.scrollTo({ y: 0, animated: true });
-              } : handleBookNow}
+              onPress={showBookingSection ? handleBackToDetails : handleBookNow}
+              loading={isTransitioning}
               style={styles.bookButton}
             />
           </>
@@ -745,7 +865,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
-  backgroundImageContainer: {
+  backgroundContainer: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -753,7 +873,18 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 1,
   },
-  foregroundImageContainer: {
+  backgroundScrollView: {
+    height: '100%',
+  },
+  backgroundImage: {
+    width: screenWidth,
+    height: '100%',
+  },
+  backgroundImageWrapper: {
+    width: screenWidth,
+    height: '100%',
+  },
+  foregroundContainer: {
     position: 'absolute',
     top: 0,
     left: 0,
@@ -761,23 +892,15 @@ const styles = StyleSheet.create({
     bottom: 0,
     zIndex: 3,
   },
-  backgroundImage: {
-    width: screenWidth,
+  foregroundScrollView: {
     height: '100%',
-  },
-  backgroundScrollView: {
-    height: '100%',
-  },
-  imageScrollView: {
-    height: 300,
-    zIndex: 2,
   },
   imageContainer: {
     width: screenWidth,
     height: 300,
     position: 'relative',
   },
-  transparentOverlay: {
+  transparentImage: {
     width: '100%',
     height: 300,
     backgroundColor: 'transparent',
@@ -803,6 +926,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.3)',
   },
+  scrollOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    zIndex: 2,
+  },
   backButton: {
     position: 'absolute',
     top: 50,
@@ -821,15 +953,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
     elevation: 5,
-  },
-  scrollOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    zIndex: 2,
   },
   collapsedTitle: {
     position: 'absolute',
@@ -992,7 +1115,6 @@ const styles = StyleSheet.create({
   bookButton: {
     paddingHorizontal: 32,
   },
-  // Booking section styles
   bookingSectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',

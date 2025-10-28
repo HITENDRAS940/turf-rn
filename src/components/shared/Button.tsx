@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -6,6 +6,7 @@ import {
   ActivityIndicator,
   ViewStyle,
   TextStyle,
+  Animated,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -17,6 +18,7 @@ interface ButtonProps {
   disabled?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  animatePress?: boolean;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -27,8 +29,45 @@ const Button: React.FC<ButtonProps> = ({
   disabled = false,
   style,
   textStyle,
+  animatePress = true,
 }) => {
   const { theme } = useTheme();
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(1)).current;
+
+  const handlePressIn = () => {
+    if (animatePress && !disabled && !loading) {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 0.96,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 0.8,
+          duration: 100,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  };
+
+  const handlePressOut = () => {
+    if (animatePress && !disabled && !loading) {
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 300,
+          friction: 10,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  };
   
   const getButtonStyle = () => {
     switch (variant) {
@@ -57,24 +96,37 @@ const Button: React.FC<ButtonProps> = ({
   };
 
   return (
-    <TouchableOpacity
+    <Animated.View
       style={[
-        styles.button,
-        getButtonStyle(),
-        (disabled || loading) && styles.disabled,
-        style,
+        {
+          transform: [{ scale: scaleAnim }],
+          opacity: opacityAnim,
+        },
       ]}
-      onPress={onPress}
-      disabled={disabled || loading}
     >
-      {loading ? (
-        <ActivityIndicator
-          color={variant === 'outline' ? theme.colors.primary : '#FFFFFF'}
-        />
-      ) : (
-        <Text style={[styles.text, getTextStyle(), textStyle]}>{title}</Text>
-      )}
-    </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.button,
+          getButtonStyle(),
+          (disabled || loading) && styles.disabled,
+          style,
+        ]}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        disabled={disabled || loading}
+        activeOpacity={0.8}
+        delayPressIn={0}
+      >
+        {loading ? (
+          <ActivityIndicator
+            color={variant === 'outline' ? theme.colors.primary : '#FFFFFF'}
+          />
+        ) : (
+          <Text style={[styles.text, getTextStyle(), textStyle]}>{title}</Text>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
