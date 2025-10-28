@@ -109,7 +109,7 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
       const bookingData = {
         turfId: turfData?.id || turfId,
         date: format(selectedDate, 'yyyy-MM-dd'),
-        slotIds: selectedSlots.map(s => s.id),
+        slotIds: selectedSlots.map(s => s.slotId || s.id), // Use slotId for API
         totalAmount: calculateTotal(),
       };
 

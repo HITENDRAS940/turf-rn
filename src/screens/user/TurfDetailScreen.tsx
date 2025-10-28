@@ -21,7 +21,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { turfAPI, bookingAPI } from '../../services/api';
-import { Turf, TimeSlot } from '../../types';
+import { Turf, TimeSlot, SlotAvailability } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import LoadingState from '../../components/shared/LoadingState';
 import Button from '../../components/shared/Button';
@@ -68,6 +68,23 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
   const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
   
   const { theme } = useTheme();
+
+  // Utility function to generate time slots based on slotId (1-24 for 24 hours)
+  const generateTimeSlot = (slotId: number, isAvailable: boolean): TimeSlot => {
+    const hour = slotId - 1; // slotId 1 = hour 0 (00:00-01:00)
+    const startTime = `${hour.toString().padStart(2, '0')}:00`;
+    const endTime = `${(hour + 1).toString().padStart(2, '0')}:00`;
+    
+    return {
+      id: slotId, // Use slotId as the id
+      slotId: slotId,
+      startTime: startTime,
+      endTime: endTime,
+      price: 0, // Will be set based on turf pricing or default
+      isAvailable: isAvailable,
+      isBooked: !isAvailable,
+    };
+  };
 
   useEffect(() => {
     fetchTurfDetails();
@@ -124,21 +141,50 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
     setSlotsLoading(true);
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const response = await turfAPI.getAvailableSlots(turf.id, dateStr);
-      setAvailableSlots(response.data);
+      console.log(`🔄 Fetching slot availability for turf ${turf.id} on ${dateStr}`);
+      
+      const response = await turfAPI.getSlotAvailability(turf.id, dateStr);
+      const slotAvailabilityData: SlotAvailability[] = response.data;
+      
+      console.log(`📊 Received ${slotAvailabilityData.length} slot availability records:`, slotAvailabilityData);
+      
+      // Generate time slots based on the availability response
+      const timeSlots: TimeSlot[] = slotAvailabilityData.map(slot => {
+        const timeSlot = generateTimeSlot(slot.slotId, slot.available);
+        
+        // Set a default price or fetch from turf pricing if available
+        // For now, using minPrice or a default value
+        timeSlot.price = minPrice || 1000; // Default price per hour
+        
+        console.log(`⏰ Generated slot ${slot.slotId}: ${timeSlot.startTime}-${timeSlot.endTime}, available: ${slot.available}`);
+        
+        return timeSlot;
+      });
+      
+      console.log(`✅ Total slots generated: ${timeSlots.length}`);
+      setAvailableSlots(timeSlots);
     } catch (error) {
+      console.error('❌ Error fetching slot availability:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
         text2: 'Failed to fetch available slots',
       });
+      // Fallback: show empty slots
+      setAvailableSlots([]);
     } finally {
       setSlotsLoading(false);
     }
   };
 
   const toggleSlotSelection = (slot: TimeSlot) => {
-    if (!slot.isAvailable) {
+    // Only allow selection of available slots
+    if (!slot.isAvailable || slot.isBooked) {
+      Toast.show({
+        type: 'info',
+        text1: 'Slot Unavailable',
+        text2: 'This time slot is already booked',
+      });
       return;
     }
 
@@ -181,7 +227,7 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
       const bookingData = {
         turfId: turf?.id || turfId,
         date: format(selectedDate, 'yyyy-MM-dd'),
-        slotIds: selectedSlots.map(s => s.id),
+        slotIds: selectedSlots.map(s => s.slotId || s.id), // Use slotId for API
         totalAmount: calculateTotal(),
       };
 
@@ -428,12 +474,6 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
           ]}
         >
           {images.map((imageUri, index) => {
-            // Debug logging for image positioning
-            if (__DEV__ && index < 3) {
-              console.log(`Image ${index}: left=${index * screenWidth}, screenWidth=${screenWidth}`);
-              console.log(`Image ${index} URI:`, imageUri.substring(0, 50) + '...');
-            }
-
             return (
               <View
                 key={`bg-${index}`}
@@ -443,8 +483,6 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
                     left: index * screenWidth,
                     width: screenWidth,
                     height: '100%',
-                    // Add background color to debug positioning
-                    backgroundColor: __DEV__ ? (index === 1 ? 'rgba(255,0,0,0.1)' : index === 2 ? 'rgba(0,0,255,0.1)' : 'rgba(0,255,0,0.1)') : 'transparent',
                   }
                 ]}
               >
@@ -452,8 +490,6 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
                   source={{ uri: imageUri }}
                   style={styles.backgroundImage}
                   resizeMode="cover"
-                  onLoad={() => __DEV__ && console.log(`Image ${index} loaded successfully`)}
-                  onError={(error) => __DEV__ && console.log(`Image ${index} error:`, error.nativeEvent.error)}
                 />
               </View>
             );

@@ -45,17 +45,7 @@ const TimeSlotCard: React.FC<TimeSlotCardProps> = ({
   return (
     <TouchableOpacity
       style={getCardStyle()}
-      onPress={() => {
-        console.log('🎯 TimeSlotCard TouchableOpacity pressed for slot:', slot.id);
-        console.log('🔧 Slot details:', {
-          id: slot.id,
-          isAvailable: slot.isAvailable,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-          isSelected: isSelected
-        });
-        onPress();
-      }}
+      onPress={onPress}
       disabled={!slot.isAvailable}
       activeOpacity={0.7}
     >

@@ -28,6 +28,12 @@ export interface TimeSlot {
   price: number;
   isAvailable: boolean;
   isBooked?: boolean;
+  slotId?: number; // Add slotId for mapping with availability API
+}
+
+export interface SlotAvailability {
+  slotId: number;
+  available: boolean;
 }
 
 export interface Booking {

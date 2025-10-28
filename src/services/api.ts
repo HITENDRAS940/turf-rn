@@ -54,6 +54,8 @@ export const turfAPI = {
   getTurfById: (id: number) => api.get(`/turfs/${id}`),
   getAvailableSlots: (turfId: number, date: string) => 
     api.get(`/turfs/${turfId}/slots?date=${date}`),
+  getSlotAvailability: (turfId: number, date: string) => 
+    api.get(`/turf-slots/${turfId}/availability?date=${date}`),
   getLowestPrice: (turfId: number) => 
     api.get(`/turfs/${turfId}/lowest-price`),
 };
