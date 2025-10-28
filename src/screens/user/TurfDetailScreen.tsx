@@ -26,6 +26,8 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  Linking,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,6 +40,7 @@ import TimeSlotCard from '../../components/user/TimeSlotCard';
 import { formatPhoneForDisplay } from '../../utils/phoneUtils';
 import Toast from 'react-native-toast-message';
 import { format } from 'date-fns';
+import CustomCalendar from '../../components/user/CustomCalendar';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -58,6 +61,7 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [showBookingSection, setShowBookingSection] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   
   // Animation refs and values for parallax and sliding effects
   const scrollViewRef = React.useRef<ScrollView>(null);
@@ -220,6 +224,48 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
+  };
+
+  const handleCallTurf = async () => {
+    if (!turf?.contactNumber) return;
+
+    const phoneNumber = `tel:${turf.contactNumber}`;
+    
+    try {
+      const canOpen = await Linking.canOpenURL(phoneNumber);
+      if (canOpen) {
+        await Linking.openURL(phoneNumber);
+      } else {
+        Alert.alert(
+          'Cannot Make Call',
+          'Your device does not support making phone calls.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'Failed to open phone dialer. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+    setSelectedSlots([]); // Reset selected slots when date changes
+    console.log('📅 Date selected:', format(date, 'yyyy-MM-dd'));
+  };
+
+  const renderCalendar = () => {
+    return (
+      <CustomCalendar
+        selectedDate={selectedDate}
+        onDateSelect={handleDateSelect}
+        visible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+      />
+    );
   };
 
   const handleImageLoadStart = (imageUri: string) => {
@@ -544,10 +590,18 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
           {turf.contactNumber && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Contact</Text>
-              <View style={[styles.contactCard, { backgroundColor: theme.colors.surface }]}>
+              <TouchableOpacity 
+                style={[styles.contactCard, { backgroundColor: theme.colors.surface }]}
+                onPress={handleCallTurf}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="call" size={20} color={theme.colors.primary} />
                 <Text style={[styles.contactText, { color: theme.colors.text }]}>{formatPhoneForDisplay(turf.contactNumber)}</Text>
-              </View>
+                <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+              <Text style={[styles.callHint, { color: theme.colors.textSecondary }]}>
+                📞 Tap to call directly
+              </Text>
             </View>
           )}
 
@@ -567,14 +621,7 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
                 
                 <TouchableOpacity 
                   style={[styles.dateCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
-                  onPress={() => {
-                    // Future enhancement: Add date picker
-                    Toast.show({
-                      type: 'info',
-                      text1: 'Date Selection',
-                      text2: 'Date picker coming soon!',
-                    });
-                  }}
+                  onPress={() => setShowDatePicker(true)}
                 >
                   <Ionicons name="calendar" size={20} color={theme.colors.primary} />
                   <Text style={[styles.dateText, { color: theme.colors.text }]}>
@@ -583,7 +630,7 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
                   <Ionicons name="chevron-down" size={16} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
                 <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>
-                  Tap on time slots below to select
+                  You can only book slots for today and tomorrow
                 </Text>
               </View>
 
@@ -680,6 +727,7 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
           </>
         )}
       </View>
+      {renderCalendar()}
     </SafeAreaView>
   );
 };
@@ -910,6 +958,7 @@ const styles = StyleSheet.create({
   contactCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 12,
     padding: 16,
     borderRadius: 12,
@@ -917,6 +966,13 @@ const styles = StyleSheet.create({
   contactText: {
     fontSize: 16,
     fontWeight: '600',
+    flex: 1,
+  },
+  callHint: {
+    fontSize: 12,
+    marginTop: 6,
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',

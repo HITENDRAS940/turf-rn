@@ -14,6 +14,8 @@ import {
   ActivityIndicator,
   Alert,
   Animated,
+  Linking,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +28,7 @@ import TimeSlotCard from '../../components/user/TimeSlotCard';
 import { formatPhoneForDisplay } from '../../utils/phoneUtils';
 import Toast from 'react-native-toast-message';
 import { format } from 'date-fns';
+import CustomCalendar from '../../components/user/CustomCalendar';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -46,6 +49,7 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [showBookingSection, setShowBookingSection] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   
   // Refs
   const scrollViewRef = React.useRef<ScrollView>(null);
@@ -76,6 +80,15 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
       fetchAvailableSlots();
     }
   }, [selectedDate, showBookingSection, turf]);
+
+  // Debug: Monitor selected slots changes
+  useEffect(() => {
+    console.log('🔄 selectedSlots state changed:', selectedSlots.map(s => ({
+      id: s.id,
+      startTime: s.startTime,
+      endTime: s.endTime
+    })));
+  }, [selectedSlots]);
 
   const fetchTurfDetails = async () => {
     try {
@@ -117,9 +130,27 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
     setSlotsLoading(true);
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
+      console.log('📅 Fetching slots for date:', dateStr, 'turf ID:', turf.id);
+      
       const response = await turfAPI.getAvailableSlots(turf.id, dateStr);
+      console.log('📊 API Response for slots:', response.data);
+      console.log('🔢 Number of slots received:', response.data?.length || 0);
+      
+      if (response.data && response.data.length > 0) {
+        response.data.forEach((slot: TimeSlot, index: number) => {
+          console.log(`🎰 Slot ${index + 1}:`, {
+            id: slot.id,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            price: slot.price,
+            isAvailable: slot.isAvailable
+          });
+        });
+      }
+      
       setAvailableSlots(response.data);
     } catch (error) {
+      console.error('❌ Error fetching slots:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -131,12 +162,27 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
   };
 
   const toggleSlotSelection = (slot: TimeSlot) => {
-    if (!slot.isAvailable) return;
+    console.log('🎯 toggleSlotSelection called with slot:', {
+      id: slot.id,
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      isAvailable: slot.isAvailable,
+      price: slot.price
+    });
+    
+    if (!slot.isAvailable) {
+      console.log('❌ Slot is not available, cannot select');
+      return;
+    }
 
     const isSelected = selectedSlots.find(s => s.id === slot.id);
+    console.log('🔍 Current selection state:', isSelected ? 'SELECTED' : 'NOT SELECTED');
+    
     if (isSelected) {
+      console.log('➖ Removing slot from selection');
       setSelectedSlots(selectedSlots.filter(s => s.id !== slot.id));
     } else {
+      console.log('➕ Adding slot to selection');
       setSelectedSlots([...selectedSlots, slot]);
     }
   };
@@ -202,6 +248,48 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
+  };
+
+  const handleCallTurf = async () => {
+    if (!turf?.contactNumber) return;
+
+    const phoneNumber = `tel:${turf.contactNumber}`;
+    
+    try {
+      const canOpen = await Linking.canOpenURL(phoneNumber);
+      if (canOpen) {
+        await Linking.openURL(phoneNumber);
+      } else {
+        Alert.alert(
+          'Cannot Make Call',
+          'Your device does not support making phone calls.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'Error',
+        'Failed to open phone dialer. Please try again.',
+        [{ text: 'OK' }]
+      );
+    }
+  };
+
+  const handleDateSelect = (date: Date) => {
+    setSelectedDate(date);
+    setSelectedSlots([]); // Reset selected slots when date changes
+    console.log('📅 Date selected:', format(date, 'yyyy-MM-dd'));
+  };
+
+  const renderCalendar = () => {
+    return (
+      <CustomCalendar
+        selectedDate={selectedDate}
+        onDateSelect={handleDateSelect}
+        visible={showDatePicker}
+        onClose={() => setShowDatePicker(false)}
+      />
+    );
   };
 
   const handleImageLoadStart = (imageUri: string) => {
@@ -498,10 +586,18 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
           {turf.contactNumber && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Contact</Text>
-              <View style={[styles.contactCard, { backgroundColor: theme.colors.surface }]}>
+              <TouchableOpacity 
+                style={[styles.contactCard, { backgroundColor: theme.colors.surface }]}
+                onPress={handleCallTurf}
+                activeOpacity={0.7}
+              >
                 <Ionicons name="call" size={20} color={theme.colors.primary} />
                 <Text style={[styles.contactText, { color: theme.colors.text }]}>{formatPhoneForDisplay(turf.contactNumber)}</Text>
-              </View>
+                <Ionicons name="chevron-forward" size={16} color={theme.colors.textSecondary} />
+              </TouchableOpacity>
+              <Text style={[styles.callHint, { color: theme.colors.textSecondary }]}>
+                📞 Tap to call directly
+              </Text>
             </View>
           )}
 
@@ -521,13 +617,7 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
                 
                 <TouchableOpacity 
                   style={[styles.dateCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
-                  onPress={() => {
-                    Toast.show({
-                      type: 'info',
-                      text1: 'Date Selection',
-                      text2: 'Date picker coming soon!',
-                    });
-                  }}
+                  onPress={() => setShowDatePicker(true)}
                 >
                   <Ionicons name="calendar" size={20} color={theme.colors.primary} />
                   <Text style={[styles.dateText, { color: theme.colors.text }]}>
@@ -536,12 +626,37 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
                   <Ionicons name="chevron-down" size={16} color={theme.colors.textSecondary} />
                 </TouchableOpacity>
                 <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>
-                  Tap on time slots below to select
+                  Select any date from today onwards
                 </Text>
               </View>
 
               <View style={styles.section}>
                 <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Available Time Slots</Text>
+                
+                {/* Debug Test Button */}
+                <TouchableOpacity 
+                  style={{
+                    backgroundColor: theme.colors.primary,
+                    padding: 12,
+                    borderRadius: 8,
+                    marginBottom: 12,
+                    alignItems: 'center'
+                  }}
+                  onPress={() => {
+                    console.log('🧪 Test button pressed');
+                    console.log('📊 Current availableSlots length:', availableSlots.length);
+                    console.log('📋 Current selectedSlots length:', selectedSlots.length);
+                    if (availableSlots.length > 0) {
+                      console.log('🎯 Testing with first slot:', availableSlots[0]);
+                      toggleSlotSelection(availableSlots[0]);
+                    }
+                  }}
+                >
+                  <Text style={{ color: '#FFFFFF', fontWeight: '600' }}>
+                    🧪 Test Slot Selection (Debug)
+                  </Text>
+                </TouchableOpacity>
+                
                 {slotsLoading ? (
                   <View style={styles.slotsLoader}>
                     <ActivityIndicator size="large" color={theme.colors.primary} />
@@ -556,13 +671,25 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
                   <View style={styles.slotsGrid}>
                     {availableSlots.map((slot) => {
                       const isSelected = selectedSlots.find(s => s.id === slot.id);
+                      
+                      console.log('🏗️ Rendering slot:', {
+                        id: slot.id,
+                        startTime: slot.startTime,
+                        endTime: slot.endTime,
+                        isAvailable: slot.isAvailable,
+                        isSelected: !!isSelected,
+                        price: slot.price
+                      });
 
                       return (
                         <TimeSlotCard
                           key={slot.id}
                           slot={slot}
                           isSelected={!!isSelected}
-                          onPress={() => toggleSlotSelection(slot)}
+                          onPress={() => {
+                            console.log('🖱️ TimeSlotCard onPress triggered for slot:', slot.id);
+                            toggleSlotSelection(slot);
+                          }}
                         />
                       );
                     })}
@@ -633,6 +760,7 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
           </>
         )}
       </View>
+      {renderCalendar()}
     </SafeAreaView>
   );
 };
@@ -862,6 +990,7 @@ const styles = StyleSheet.create({
   contactCard: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     gap: 12,
     padding: 16,
     borderRadius: 12,
@@ -869,6 +998,13 @@ const styles = StyleSheet.create({
   contactText: {
     fontSize: 16,
     fontWeight: '600',
+    flex: 1,
+  },
+  callHint: {
+    fontSize: 12,
+    marginTop: 6,
+    fontStyle: 'italic',
+    textAlign: 'center',
   },
   footer: {
     flexDirection: 'row',
