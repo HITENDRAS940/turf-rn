@@ -405,86 +405,59 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
 
     return (
       <Animated.View style={[styles.imageGalleryContainer, { height: headerHeight }]}>
-        {/* Sliding background images with parallax */}
+        {/* Background container that slides in sync with scroll */}
         <Animated.View 
           style={[
             styles.backgroundContainer,
             {
+              width: images.length * screenWidth, // Total width for all images
               transform: [
                 { scale: imageScale },
                 { scaleY: bounceScale },
-                { translateY: imageTranslateY }
+                { translateY: imageTranslateY },
+                // Move background in opposite direction of scroll to stay in sync
+                { 
+                  translateX: imageScrollX.interpolate({
+                    inputRange: [0, images.length * screenWidth],
+                    outputRange: [0, -images.length * screenWidth],
+                    extrapolate: 'clamp',
+                  })
+                }
               ]
             }
           ]}
         >
-          <Animated.ScrollView
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            scrollEnabled={false}
-            style={styles.backgroundScrollView}
-            onScroll={Animated.event(
-              [{ nativeEvent: { contentOffset: { x: imageScrollX } } }],
-              { useNativeDriver: false }
-            )}
-            scrollEventThrottle={1}
-          >
-            {images.map((imageUri, index) => {
-              // Create sliding animation for each background image
-              const imageTranslateX = imageScrollX.interpolate({
-                inputRange: [
-                  (index - 1) * screenWidth,
-                  index * screenWidth,
-                  (index + 1) * screenWidth,
-                ],
-                outputRange: [screenWidth * 0.3, 0, -screenWidth * 0.3],
-                extrapolate: 'clamp',
-              });
+          {images.map((imageUri, index) => {
+            // Debug logging for image positioning
+            if (__DEV__ && index < 3) {
+              console.log(`Image ${index}: left=${index * screenWidth}, screenWidth=${screenWidth}`);
+              console.log(`Image ${index} URI:`, imageUri.substring(0, 50) + '...');
+            }
 
-              const imageOpacity = imageScrollX.interpolate({
-                inputRange: [
-                  (index - 1) * screenWidth,
-                  index * screenWidth,
-                  (index + 1) * screenWidth,
-                ],
-                outputRange: [0.7, 1, 0.7],
-                extrapolate: 'clamp',
-              });
-
-              const imageBackgroundScale = imageScrollX.interpolate({
-                inputRange: [
-                  (index - 1) * screenWidth,
-                  index * screenWidth,
-                  (index + 1) * screenWidth,
-                ],
-                outputRange: [0.95, 1, 0.95],
-                extrapolate: 'clamp',
-              });
-
-              return (
-                <Animated.View
-                  key={`bg-${index}`}
-                  style={[
-                    styles.backgroundImageWrapper,
-                    {
-                      transform: [
-                        { translateX: imageTranslateX },
-                        { scale: imageBackgroundScale },
-                      ],
-                      opacity: imageOpacity,
-                    }
-                  ]}
-                >
-                  <Image 
-                    source={{ uri: imageUri }}
-                    style={styles.backgroundImage}
-                    resizeMode="cover"
-                  />
-                </Animated.View>
-              );
-            })}
-          </Animated.ScrollView>
+            return (
+              <View
+                key={`bg-${index}`}
+                style={[
+                  styles.backgroundImageWrapper,
+                  {
+                    left: index * screenWidth,
+                    width: screenWidth,
+                    height: '100%',
+                    // Add background color to debug positioning
+                    backgroundColor: __DEV__ ? (index === 1 ? 'rgba(255,0,0,0.1)' : index === 2 ? 'rgba(0,0,255,0.1)' : 'rgba(0,255,0,0.1)') : 'transparent',
+                  }
+                ]}
+              >
+                <Image 
+                  source={{ uri: imageUri }}
+                  style={styles.backgroundImage}
+                  resizeMode="cover"
+                  onLoad={() => __DEV__ && console.log(`Image ${index} loaded successfully`)}
+                  onError={(error) => __DEV__ && console.log(`Image ${index} error:`, error.nativeEvent.error)}
+                />
+              </View>
+            );
+          })}
         </Animated.View>
         
         {/* Transparent foreground for touch handling */}
@@ -495,6 +468,9 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
             pagingEnabled 
             showsHorizontalScrollIndicator={false}
             style={styles.foregroundScrollView}
+            contentContainerStyle={{
+              width: images.length * screenWidth,
+            }}
             onScroll={Animated.event(
               [{ nativeEvent: { contentOffset: { x: imageScrollX } } }],
               { 
@@ -502,7 +478,7 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
                 listener: handleImageScroll,
               }
             )}
-            scrollEventThrottle={Platform.OS === 'ios' ? 1 : 16}
+            scrollEventThrottle={Platform.OS === 'ios' ? 8 : 16}
             decelerationRate={Platform.OS === 'ios' ? 'fast' : 'normal'}
             bounces={Platform.OS === 'ios'}
             scrollEnabled={images.length > 1}
@@ -512,59 +488,30 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
             overScrollMode={Platform.OS === 'android' ? 'never' : 'auto'}
             nestedScrollEnabled={Platform.OS === 'android'}
           >
-            {images.map((imageUri, index) => {
-              // Create sliding animation for each foreground image
-              const foregroundTranslateX = imageScrollX.interpolate({
-                inputRange: [
-                  (index - 1) * screenWidth,
-                  index * screenWidth,
-                  (index + 1) * screenWidth,
-                ],
-                outputRange: Platform.OS === 'ios' ? [screenWidth * 0.2, 0, -screenWidth * 0.2] : [0, 0, 0],
-                extrapolate: 'clamp',
-              });
-
-              const foregroundOpacity = imageScrollX.interpolate({
-                inputRange: [
-                  (index - 1) * screenWidth,
-                  index * screenWidth,
-                  (index + 1) * screenWidth,
-                ],
-                outputRange: [0.8, 1, 0.8],
-                extrapolate: 'clamp',
-              });
-
-              return (
-                <Animated.View 
-                  key={index} 
-                  style={[
-                    styles.imageContainer,
-                    {
-                      transform: [{ translateX: foregroundTranslateX }],
-                      opacity: foregroundOpacity,
-                    }
-                  ]}
-                >
-                  {imageErrors[imageUri] ? (
-                    <View style={[styles.imagePlaceholder, { backgroundColor: theme.colors.lightGray }]}>
-                      <Ionicons name="image-outline" size={64} color={theme.colors.gray} />
-                      <Text style={[styles.placeholderText, { color: theme.colors.textSecondary }]}>
-                        Image not available
-                      </Text>
-                    </View>
-                  ) : (
-                    <>
-                      <View style={styles.transparentImage} />
-                      {imageLoadingStates[imageUri] && (
-                        <View style={styles.imageLoader}>
-                          <ActivityIndicator size="large" color={theme.colors.primary} />
-                        </View>
-                      )}
-                    </>
-                  )}
-                </Animated.View>
-              );
-            })}
+            {images.map((imageUri, index) => (
+              <View 
+                key={index} 
+                style={styles.imageContainer}
+              >
+                {imageErrors[imageUri] ? (
+                  <View style={[styles.imagePlaceholder, { backgroundColor: theme.colors.lightGray }]}>
+                    <Ionicons name="image-outline" size={64} color={theme.colors.gray} />
+                    <Text style={[styles.placeholderText, { color: theme.colors.textSecondary }]}>
+                      Image not available
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    <View style={styles.transparentImage} />
+                    {imageLoadingStates[imageUri] && (
+                      <View style={styles.imageLoader}>
+                        <ActivityIndicator size="large" color={theme.colors.primary} />
+                      </View>
+                    )}
+                  </>
+                )}
+              </View>
+            ))}
           </Animated.ScrollView>
         </View>
         
@@ -869,9 +816,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 0,
     left: 0,
-    right: 0,
-    bottom: 0,
+    height: '100%',
     zIndex: 1,
+    flexDirection: 'row',
   },
   backgroundScrollView: {
     height: '100%',
@@ -883,6 +830,8 @@ const styles = StyleSheet.create({
   backgroundImageWrapper: {
     width: screenWidth,
     height: '100%',
+    position: 'absolute',
+    top: 0,
   },
   foregroundContainer: {
     position: 'absolute',
