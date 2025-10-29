@@ -65,8 +65,13 @@ const TimeSlotCard: React.FC<TimeSlotCardProps> = ({
       </Text>
 
       {!slot.isAvailable && (
-        <View style={[styles.bookedBadge, { backgroundColor: theme.colors.error }]}>
-          <Text style={styles.bookedText}>Booked</Text>
+        <View style={[
+          styles.bookedBadge, 
+          { backgroundColor: slot.isPast ? theme.colors.gray : theme.colors.error }
+        ]}>
+          <Text style={styles.bookedText}>
+            {slot.isPast ? 'Past' : 'Booked'}
+          </Text>
         </View>
       )}
     </TouchableOpacity>

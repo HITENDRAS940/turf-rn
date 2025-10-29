@@ -28,6 +28,7 @@ export interface TimeSlot {
   price: number;
   isAvailable: boolean;
   isBooked?: boolean;
+  isPast?: boolean; // Add isPast to distinguish past slots from booked slots
   slotId?: number; // Add slotId for mapping with availability API
 }
 

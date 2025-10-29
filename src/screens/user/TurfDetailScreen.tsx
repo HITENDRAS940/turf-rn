@@ -70,8 +70,24 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
   
   const { theme } = useTheme();
 
+  // Utility function to check if a slot is in the past for today's date
+  const isSlotInPast = (slotId: number, selectedDate: Date): boolean => {
+    const today = new Date();
+    const isToday = format(selectedDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
+    
+    if (!isToday) {
+      return false; // Future or past dates don't need time validation
+    }
+    
+    const currentHour = today.getHours();
+    const slotStartHour = slotId - 1; // slotId 1 = hour 0 (00:00-01:00)
+    
+    // If current time is past the slot start time, it's in the past
+    return currentHour >= slotStartHour;
+  };
+
   // Utility function to generate time slots based on slotId (1-24 for 24 hours)
-  const generateTimeSlot = (slotId: number, isAvailable: boolean, price: number): TimeSlot => {
+  const generateTimeSlot = (slotId: number, isAvailable: boolean, price: number, selectedDate: Date): TimeSlot => {
     const hour = slotId - 1; // slotId 1 = hour 0 (00:00-01:00)
     const startTime = `${hour.toString().padStart(2, '0')}:00`;
     
@@ -79,14 +95,21 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
     const endHour = slotId === 24 ? 0 : slotId;
     const endTime = `${endHour.toString().padStart(2, '0')}:00`;
     
+    // Check if this slot is in the past for today's date
+    const isPastSlot = isSlotInPast(slotId, selectedDate);
+    
+    // If slot is in the past, mark it as unavailable regardless of API response
+    const finalAvailability = isPastSlot ? false : isAvailable;
+    
     return {
       id: slotId, // Use slotId as the id
       slotId: slotId,
       startTime: startTime,
       endTime: endTime,
       price: price, // Use the price from API response
-      isAvailable: isAvailable,
-      isBooked: !isAvailable,
+      isAvailable: finalAvailability,
+      isBooked: !isAvailable && !isPastSlot, // Only mark as booked if not past and not available
+      isPast: isPastSlot, // Add isPast flag
     };
   };
 
@@ -157,9 +180,12 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
       
       // Generate time slots based on the availability response
       const timeSlots: TimeSlot[] = sortedSlotData.map(slot => {
-        const timeSlot = generateTimeSlot(slot.slotId, slot.available, slot.price);
+        const timeSlot = generateTimeSlot(slot.slotId, slot.available, slot.price, selectedDate);
         
-        console.log(`⏰ Generated slot ${slot.slotId}: ${timeSlot.startTime}-${timeSlot.endTime}, available: ${slot.available}, price: ₹${slot.price}`);
+        const isPastSlot = isSlotInPast(slot.slotId, selectedDate);
+        const statusText = isPastSlot ? '(past)' : slot.available ? '(available)' : '(booked)';
+        
+        console.log(`⏰ Generated slot ${slot.slotId}: ${timeSlot.startTime}-${timeSlot.endTime}, ${statusText}, price: ₹${slot.price}`);
         
         return timeSlot;
       });
@@ -181,13 +207,24 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
   };
 
   const toggleSlotSelection = (slot: TimeSlot) => {
+    // Check if the slot is in the past (only if slotId is available)
+    const isPastSlot = slot.slotId ? isSlotInPast(slot.slotId, selectedDate) : false;
+    
     // Only allow selection of available slots
     if (!slot.isAvailable || slot.isBooked) {
-      Toast.show({
-        type: 'info',
-        text1: 'Slot Unavailable',
-        text2: 'This time slot is already booked',
-      });
+      if (isPastSlot) {
+        Toast.show({
+          type: 'info',
+          text1: 'Past Time Slot',
+          text2: 'Cannot book slots that have already passed',
+        });
+      } else {
+        Toast.show({
+          type: 'info',
+          text1: 'Slot Unavailable',
+          text2: 'This time slot is already booked',
+        });
+      }
       return;
     }
 
