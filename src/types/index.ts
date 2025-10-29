@@ -71,21 +71,29 @@ export interface BookingResponse {
 
 export interface Booking {
   id: number;
-  turfId?: number;
+  user: {
+    name: string;
+    phone: string;
+  };
+  reference: string;
+  amount: number;
+  status: 'CONFIRMED' | 'CANCELLED' | 'PENDING' | 'COMPLETED';
   turfName: string;
-  date: string;
+  slotTime: string;
   slots: Array<{
-    slotId?: number;
+    slotId: number;
     startTime: string;
     endTime: string;
-    price?: number;
+    price: number;
   }>;
-  totalAmount: number;
-  status: 'CONFIRMED' | 'CANCELLED' | 'PENDING' | 'COMPLETED';
-  createdAt?: string;
+  bookingDate: string;
+  createdAt: string;
+  // Backwards compatibility fields
+  turfId?: number;
+  date?: string;
+  totalAmount?: number;
   playerName?: string;
   phone?: string;
-  reference?: string;
 }
 
 export interface DashboardStats {

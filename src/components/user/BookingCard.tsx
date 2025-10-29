@@ -29,7 +29,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
   };
 
   const isBookingCancellable = () => {
-    const bookingDate = new Date(booking.date);
+    const bookingDate = new Date(booking.bookingDate || booking.date || '');
     const now = new Date();
     const diffHours = (bookingDate.getTime() - now.getTime()) / (1000 * 60 * 60);
     
@@ -48,7 +48,9 @@ const BookingCard: React.FC<BookingCardProps> = ({
           <Text style={[styles.turfName, { color: theme.colors.text }]}>{booking.turfName}</Text>
           <StatusBadge status={booking.status} />
         </View>
-        <Text style={[styles.bookingId, { color: theme.colors.textSecondary }]}>#{booking.id}</Text>
+        <Text style={[styles.bookingId, { color: theme.colors.textSecondary }]}>
+          #{booking.reference || booking.id}
+        </Text>
       </View>
 
       <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
@@ -57,20 +59,22 @@ const BookingCard: React.FC<BookingCardProps> = ({
         <View style={styles.infoRow}>
           <Ionicons name="calendar-outline" size={16} color={theme.colors.gray} />
           <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-            {format(new Date(booking.date), 'dd MMM yyyy')}
+            {format(new Date(booking.bookingDate || booking.date || ''), 'dd MMM yyyy')}
           </Text>
         </View>
 
         <View style={styles.infoRow}>
           <Ionicons name="time-outline" size={16} color={theme.colors.gray} />
           <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-            {formatSlots(booking.slots)}
+            {booking.slotTime || formatSlots(booking.slots)}
           </Text>
         </View>
 
         <View style={styles.infoRow}>
           <Ionicons name="cash-outline" size={16} color={theme.colors.gray} />
-          <Text style={[styles.priceText, { color: theme.colors.primary }]}>₹{booking.totalAmount}</Text>
+          <Text style={[styles.priceText, { color: theme.colors.primary }]}>
+            ₹{booking.amount || booking.totalAmount}
+          </Text>
         </View>
 
         {booking.createdAt && (

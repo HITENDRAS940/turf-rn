@@ -31,6 +31,7 @@ const AllBookingsScreen = () => {
     { key: 'CONFIRMED', label: 'Confirmed', count: bookings.filter(b => b.status === 'CONFIRMED').length },
     { key: 'PENDING', label: 'Pending', count: bookings.filter(b => b.status === 'PENDING').length },
     { key: 'CANCELLED', label: 'Cancelled', count: bookings.filter(b => b.status === 'CANCELLED').length },
+    { key: 'COMPLETED', label: 'Completed', count: bookings.filter(b => b.status === 'COMPLETED').length },
   ];
 
   useEffect(() => {
@@ -69,40 +70,68 @@ const AllBookingsScreen = () => {
           <Text style={[styles.turfName, { color: theme.colors.text }]}>{item.turfName}</Text>
           <StatusBadge status={item.status} />
         </View>
+        <Text style={[styles.referenceText, { color: theme.colors.textSecondary }]}>
+          #{item.reference}
+        </Text>
       </View>
       
       <View style={styles.cardContent}>
         <View style={styles.infoRow}>
           <Ionicons name="person-outline" size={16} color={theme.colors.gray} />
           <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-            {item.playerName || (item.phone ? formatPhoneForDisplay(item.phone) : 'N/A')}
+            {item.user?.name || 'N/A'}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Ionicons name="call-outline" size={16} color={theme.colors.gray} />
+          <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
+            {item.user?.phone ? formatPhoneForDisplay(item.user.phone) : 'N/A'}
           </Text>
         </View>
         
         <View style={styles.infoRow}>
           <Ionicons name="calendar-outline" size={16} color={theme.colors.gray} />
           <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-            {format(new Date(item.date), 'dd MMM yyyy')}
+            {format(new Date(item.bookingDate), 'dd MMM yyyy')}
           </Text>
         </View>
         
         <View style={styles.infoRow}>
           <Ionicons name="time-outline" size={16} color={theme.colors.gray} />
           <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
-            {item.slots.map(s => `${s.startTime}-${s.endTime}`).join(', ')}
+            {item.slotTime || item.slots.map(s => `${s.startTime}-${s.endTime}`).join(', ')}
           </Text>
         </View>
         
         <View style={styles.infoRow}>
           <Ionicons name="cash-outline" size={16} color={theme.colors.gray} />
-          <Text style={[styles.priceText, { color: theme.colors.text }]}>₹{item.totalAmount}</Text>
+          <Text style={[styles.priceText, { color: theme.colors.text }]}>₹{item.amount}</Text>
         </View>
+
+        {item.slots && item.slots.length > 0 && (
+          <View style={styles.slotsContainer}>
+            <Text style={[styles.slotsHeader, { color: theme.colors.textSecondary }]}>
+              Slot Details:
+            </Text>
+            {item.slots.map((slot, index) => (
+              <View key={index} style={styles.slotDetailRow}>
+                <Text style={[styles.slotText, { color: theme.colors.text }]}>
+                  Slot {slot.slotId}: {slot.startTime}-{slot.endTime}
+                </Text>
+                <Text style={[styles.slotPrice, { color: theme.colors.primary }]}>
+                  ₹{slot.price}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
         
         {item.createdAt && (
           <View style={styles.infoRow}>
-            <Ionicons name="calendar-outline" size={16} color={theme.colors.gray} />
+            <Ionicons name="receipt-outline" size={16} color={theme.colors.gray} />
             <Text style={[styles.infoSubText, { color: theme.colors.textSecondary }]}>
-              Booked on {format(new Date(item.createdAt), 'dd MMM yyyy')}
+              Booked on {format(new Date(item.createdAt), 'dd MMM yyyy, HH:mm')}
             </Text>
           </View>
         )}
@@ -254,6 +283,36 @@ const styles = StyleSheet.create({
   infoSubText: {
     fontSize: 12,
     flex: 1,
+  },
+  referenceText: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginTop: 4,
+  },
+  slotsContainer: {
+    marginTop: 8,
+    padding: 12,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.02)',
+  },
+  slotsHeader: {
+    fontSize: 12,
+    fontWeight: '600',
+    marginBottom: 6,
+  },
+  slotDetailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 2,
+  },
+  slotText: {
+    fontSize: 13,
+    flex: 1,
+  },
+  slotPrice: {
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
 

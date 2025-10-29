@@ -47,8 +47,8 @@ const MyBookingsScreen = ({ navigation, route }: any) => {
       
       // Sort bookings by created date (newest first)
       const sortedBookings = bookingsData.sort((a: Booking, b: Booking) => {
-        const dateA = new Date(a.createdAt || a.date).getTime();
-        const dateB = new Date(b.createdAt || b.date).getTime();
+        const dateA = new Date(a.createdAt || a.bookingDate || a.date || '').getTime();
+        const dateB = new Date(b.createdAt || b.bookingDate || b.date || '').getTime();
         return dateB - dateA;
       });
       
