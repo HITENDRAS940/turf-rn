@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface StatusBadgeProps {
-  status: 'CONFIRMED' | 'CANCELLED' | 'PENDING';
+  status: 'CONFIRMED' | 'CANCELLED' | 'PENDING' | 'COMPLETED';
 }
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
@@ -17,6 +17,8 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
         return { backgroundColor: '#FEE2E2', color: theme.colors.error };
       case 'PENDING':
         return { backgroundColor: '#FEF3C7', color: theme.colors.warning };
+      case 'COMPLETED':
+        return { backgroundColor: '#E0E7FF', color: theme.colors.primary };
       default:
         return { backgroundColor: theme.colors.lightGray, color: theme.colors.gray };
     }

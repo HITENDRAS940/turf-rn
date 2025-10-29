@@ -21,12 +21,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { turfAPI, bookingAPI } from '../../services/api';
-import { Turf, TimeSlot, SlotAvailability } from '../../types';
+import { Turf, TimeSlot, SlotAvailability, BookingRequest, BookingResponse } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import LoadingState from '../../components/shared/LoadingState';
 import Button from '../../components/shared/Button';
 import TimeSlotCard from '../../components/user/TimeSlotCard';
 import { formatPhoneForDisplay } from '../../utils/phoneUtils';
+import { generateRandomPaymentDetails, simulatePaymentProcessing, formatPaymentMethod } from '../../utils/paymentUtils';
 import Toast from 'react-native-toast-message';
 import { format } from 'date-fns';
 import CustomCalendar from '../../components/user/CustomCalendar';
@@ -213,12 +214,16 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
       return;
     }
 
+    const totalAmount = calculateTotal();
+    const slotsText = selectedSlots.map(slot => `${slot.startTime}-${slot.endTime}`).join(', ');
+    const dateText = format(selectedDate, 'dd MMM yyyy');
+
     Alert.alert(
       'Confirm Booking',
-      `Are you sure you want to book ${selectedSlots.length} slot(s) for ₹${calculateTotal()}?`,
+      `📅 Date: ${dateText}\n⏰ Slots: ${slotsText}\n💰 Total: ₹${totalAmount}\n\nProceed with payment?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Confirm', onPress: confirmBooking },
+        { text: 'Confirm & Pay', onPress: confirmBooking },
       ]
     );
   };
@@ -226,27 +231,70 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
   const confirmBooking = async () => {
     setBookingLoading(true);
     try {
-      const bookingData = {
+      // Generate random payment details for mock booking
+      const totalAmount = calculateTotal();
+      const paymentDetails = generateRandomPaymentDetails(totalAmount);
+      
+      console.log('💳 Generated payment details:', paymentDetails);
+      
+      // Simulate payment processing
+      Toast.show({
+        type: 'info',
+        text1: 'Processing Payment',
+        text2: `Using ${formatPaymentMethod(paymentDetails)}`,
+        visibilityTime: 2000,
+      });
+      
+      const paymentSuccess = await simulatePaymentProcessing();
+      
+      if (!paymentSuccess) {
+        Toast.show({
+          type: 'error',
+          text1: 'Payment Failed',
+          text2: 'Please try again with a different payment method',
+        });
+        return;
+      }
+      
+      // Create booking request with new API format
+      const bookingRequest: BookingRequest = {
         turfId: turf?.id || turfId,
-        date: format(selectedDate, 'yyyy-MM-dd'),
-        slotIds: selectedSlots.map(s => s.slotId || s.id), // Use slotId for API
-        totalAmount: calculateTotal(),
+        slotIds: selectedSlots.map(s => s.slotId || s.id),
+        bookingDate: format(selectedDate, 'yyyy-MM-dd'),
+        paymentDetails: paymentDetails,
       };
 
-      await bookingAPI.createBooking(bookingData);
+      console.log('📋 Booking request:', bookingRequest);
+
+      const response = await bookingAPI.createBooking(bookingRequest);
+      const bookingResponse: BookingResponse = response.data;
+      
+      console.log('✅ Booking response:', bookingResponse);
 
       Toast.show({
         type: 'success',
-        text1: 'Success',
-        text2: 'Booking confirmed successfully!',
+        text1: 'Booking Confirmed! 🎉',
+        text2: `Reference: ${bookingResponse.reference}`,
+        visibilityTime: 4000,
       });
 
-      navigation.navigate('Bookings');
+      // Navigate to bookings with success message
+      navigation.navigate('Bookings', { 
+        newBooking: bookingResponse,
+        showSuccess: true 
+      });
+      
     } catch (error: any) {
+      console.error('❌ Booking error:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Failed to create booking';
+      
       Toast.show({
         type: 'error',
         text1: 'Booking Failed',
-        text2: error.response?.data?.message || 'Failed to create booking',
+        text2: errorMessage,
+        visibilityTime: 4000,
       });
     } finally {
       setBookingLoading(false);

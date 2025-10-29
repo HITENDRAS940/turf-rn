@@ -62,9 +62,14 @@ export const turfAPI = {
 
 // Booking APIs
 export const bookingAPI = {
-  createBooking: (data: any) => api.post('/bookings', data),
-  getUserBookings: () => api.get('/bookings/user'),
-  cancelBooking: (id: number) => api.delete(`/bookings/${id}`),
+  createBooking: (data: {
+    turfId: number;
+    slotIds: number[];
+    bookingDate: string;
+    paymentDetails: object;
+  }) => api.post('/user/bookings', data),
+  getUserBookings: () => api.get('/user/bookings'),
+  cancelBooking: (id: number) => api.delete(`/user/bookings/${id}`),
 };
 
 // Admin APIs

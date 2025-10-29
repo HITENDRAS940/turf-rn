@@ -37,17 +37,55 @@ export interface SlotAvailability {
   price: number;
 }
 
+export interface BookingRequest {
+  turfId: number;
+  slotIds: number[];
+  bookingDate: string;
+  paymentDetails: {
+    method: string;
+    transactionId: string;
+    amount: number;
+    cardNumber?: string;
+    upiId?: string;
+  };
+}
+
+export interface BookingSlot {
+  slotId: number;
+  startTime: string;
+  endTime: string;
+  price: number;
+}
+
+export interface BookingResponse {
+  id: number;
+  reference: string;
+  amount: number;
+  status: string;
+  turfName: string;
+  slotTime: string;
+  slots: BookingSlot[];
+  bookingDate: string;
+  createdAt: string;
+}
+
 export interface Booking {
   id: number;
-  turfId: number;
+  turfId?: number;
   turfName: string;
   date: string;
-  slots: TimeSlot[];
+  slots: Array<{
+    slotId?: number;
+    startTime: string;
+    endTime: string;
+    price?: number;
+  }>;
   totalAmount: number;
-  status: 'CONFIRMED' | 'CANCELLED' | 'PENDING';
-  createdAt: string;
+  status: 'CONFIRMED' | 'CANCELLED' | 'PENDING' | 'COMPLETED';
+  createdAt?: string;
   playerName?: string;
   phone?: string;
+  reference?: string;
 }
 
 export interface DashboardStats {

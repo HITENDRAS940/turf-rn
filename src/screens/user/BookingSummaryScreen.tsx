@@ -10,11 +10,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { turfAPI, bookingAPI } from '../../services/api';
-import { Turf, TimeSlot } from '../../types';
+import { Turf, TimeSlot, BookingRequest, BookingResponse } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import LoadingState from '../../components/shared/LoadingState';
 import Button from '../../components/shared/Button';
 import TimeSlotCard from '../../components/user/TimeSlotCard';
+import { generateRandomPaymentDetails, simulatePaymentProcessing, formatPaymentMethod } from '../../utils/paymentUtils';
 import Toast from 'react-native-toast-message';
 import { format } from 'date-fns';
 
@@ -51,20 +52,62 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
     }
   };
 
+  // Utility function to generate time slots based on slotId (1-24 for 24 hours)
+  const generateTimeSlot = (slotId: number, isAvailable: boolean, price: number): TimeSlot => {
+    const hour = slotId - 1; // slotId 1 = hour 0 (00:00-01:00)
+    const startTime = `${hour.toString().padStart(2, '0')}:00`;
+    
+    // Handle the wrap-around for 24th slot (23:00-00:00)
+    const endHour = slotId === 24 ? 0 : slotId;
+    const endTime = `${endHour.toString().padStart(2, '0')}:00`;
+    
+    return {
+      id: slotId, // Use slotId as the id
+      slotId: slotId,
+      startTime: startTime,
+      endTime: endTime,
+      price: price, // Use the price from API response
+      isAvailable: isAvailable,
+      isBooked: !isAvailable,
+    };
+  };
+
   const fetchAvailableSlots = async () => {
     if (!turfData && !turfId) return;
 
     try {
       const id = turfData?.id || turfId;
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      const response = await turfAPI.getAvailableSlots(id, dateStr);
-      setAvailableSlots(response.data);
+      console.log(`🔄 Fetching slot availability for turf ${id} on ${dateStr}`);
+      
+      const response = await turfAPI.getSlotAvailability(id, dateStr);
+      const slotAvailabilityData = response.data;
+      
+      console.log(`📊 Received ${slotAvailabilityData.length} slot availability records:`, slotAvailabilityData);
+      
+      // Sort slots by slotId to ensure correct chronological order (1-24)
+      const sortedSlotData = slotAvailabilityData.sort((a: any, b: any) => a.slotId - b.slotId);
+      
+      // Generate time slots based on the availability response
+      const timeSlots: TimeSlot[] = sortedSlotData.map((slot: any) => {
+        const timeSlot = generateTimeSlot(slot.slotId, slot.available, slot.price);
+        
+        console.log(`⏰ Generated slot ${slot.slotId}: ${timeSlot.startTime}-${timeSlot.endTime}, available: ${slot.available}, price: ₹${slot.price}`);
+        
+        return timeSlot;
+      });
+      
+      console.log(`✅ Total slots generated: ${timeSlots.length} (sorted by slotId)`);
+      setAvailableSlots(timeSlots);
     } catch (error) {
+      console.error('❌ Error fetching slot availability:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
         text2: 'Failed to fetch available slots',
       });
+      // Fallback: show empty slots
+      setAvailableSlots([]);
     }
   };
 
@@ -93,12 +136,16 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
       return;
     }
 
+    const totalAmount = calculateTotal();
+    const slotsText = selectedSlots.map(slot => `${slot.startTime}-${slot.endTime}`).join(', ');
+    const dateText = format(selectedDate, 'dd MMM yyyy');
+
     Alert.alert(
       'Confirm Booking',
-      `Are you sure you want to book ${selectedSlots.length} slot(s) for ₹${calculateTotal()}?`,
+      `📅 Date: ${dateText}\n⏰ Slots: ${slotsText}\n💰 Total: ₹${totalAmount}\n\nProceed with payment?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Confirm', onPress: confirmBooking },
+        { text: 'Confirm & Pay', onPress: confirmBooking },
       ]
     );
   };
@@ -106,27 +153,70 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
   const confirmBooking = async () => {
     setBookingLoading(true);
     try {
-      const bookingData = {
+      // Generate random payment details for mock booking
+      const totalAmount = calculateTotal();
+      const paymentDetails = generateRandomPaymentDetails(totalAmount);
+      
+      console.log('💳 Generated payment details:', paymentDetails);
+      
+      // Simulate payment processing
+      Toast.show({
+        type: 'info',
+        text1: 'Processing Payment',
+        text2: `Using ${formatPaymentMethod(paymentDetails)}`,
+        visibilityTime: 2000,
+      });
+      
+      const paymentSuccess = await simulatePaymentProcessing();
+      
+      if (!paymentSuccess) {
+        Toast.show({
+          type: 'error',
+          text1: 'Payment Failed',
+          text2: 'Please try again with a different payment method',
+        });
+        return;
+      }
+      
+      // Create booking request with new API format
+      const bookingRequest: BookingRequest = {
         turfId: turfData?.id || turfId,
-        date: format(selectedDate, 'yyyy-MM-dd'),
-        slotIds: selectedSlots.map(s => s.slotId || s.id), // Use slotId for API
-        totalAmount: calculateTotal(),
+        slotIds: selectedSlots.map(s => s.slotId || s.id),
+        bookingDate: format(selectedDate, 'yyyy-MM-dd'),
+        paymentDetails: paymentDetails,
       };
 
-      await bookingAPI.createBooking(bookingData);
+      console.log('📋 Booking request:', bookingRequest);
+
+      const response = await bookingAPI.createBooking(bookingRequest);
+      const bookingResponse: BookingResponse = response.data;
+      
+      console.log('✅ Booking response:', bookingResponse);
 
       Toast.show({
         type: 'success',
-        text1: 'Success',
-        text2: 'Booking confirmed successfully!',
+        text1: 'Booking Confirmed! 🎉',
+        text2: `Reference: ${bookingResponse.reference}`,
+        visibilityTime: 4000,
       });
 
-      navigation.navigate('Bookings');
+      // Navigate to bookings with success message
+      navigation.navigate('Bookings', { 
+        newBooking: bookingResponse,
+        showSuccess: true 
+      });
+      
     } catch (error: any) {
+      console.error('❌ Booking error:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          'Failed to create booking';
+      
       Toast.show({
         type: 'error',
         text1: 'Booking Failed',
-        text2: error.response?.data?.message || 'Failed to create booking',
+        text2: errorMessage,
+        visibilityTime: 4000,
       });
     } finally {
       setBookingLoading(false);
