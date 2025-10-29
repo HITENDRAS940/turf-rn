@@ -34,6 +34,7 @@ export interface TimeSlot {
 export interface SlotAvailability {
   slotId: number;
   available: boolean;
+  price: number;
 }
 
 export interface Booking {

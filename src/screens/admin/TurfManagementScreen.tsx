@@ -223,6 +223,14 @@ const TurfManagementScreen = () => {
     setCurrentStep('availability');
   };
 
+  const skipToSlotsManagement = async () => {
+    // Skip turf details update and go directly to slots
+    if (!slotsLoadedFromDB && currentTurfId) {
+      await fetchSlotConfigurations(currentTurfId);
+    }
+    setCurrentStep('slots');
+  };
+
   const skipAvailabilityAndFinish = () => {
     Toast.show({
       type: 'success',
@@ -253,13 +261,16 @@ const TurfManagementScreen = () => {
           enabled: dbSlot.enabled === true, // Explicitly check for true
         }));
         
-        setSlots(mappedSlots);
+        // Sort slots by slotId to ensure correct chronological order (1-24)
+        const sortedSlots = mappedSlots.sort((a: any, b: any) => a.slotId - b.slotId);
+        
+        setSlots(sortedSlots);
         setSlotsLoadedFromDB(true);
         
         Toast.show({
           type: 'success',
           text1: 'Success',
-          text2: `Loaded ${mappedSlots.length} slot configurations from database`,
+          text2: `Loaded ${sortedSlots.length} slot configurations from database`,
         });
       } else {
         // No slots in database, use default slots
@@ -310,14 +321,17 @@ const TurfManagementScreen = () => {
           enabled: dbSlot.enabled === true, // Explicit boolean check
         }));
         
-        console.log('✅ Mapped slots from API:', mappedSlots);
-        setSlots(mappedSlots);
+        // Sort slots by slotId to ensure correct chronological order (1-24)
+        const sortedSlots = mappedSlots.sort((a: any, b: any) => a.slotId - b.slotId);
+        
+        console.log('✅ Mapped and sorted slots from API:', sortedSlots);
+        setSlots(sortedSlots);
         setSlotsLoadedFromDB(true);
         
         Toast.show({
           type: 'success',
           text1: 'Success',
-          text2: `Refreshed ${mappedSlots.length} slot configurations from database`,
+          text2: `Refreshed ${sortedSlots.length} slot configurations from database`,
         });
       } else {
         console.log('⚠️ No slots found in database, using defaults');
@@ -508,15 +522,26 @@ const TurfManagementScreen = () => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
-              {isEditMode ? 'Edit Turf Details' : 'Add Turf Details'}
-            </Text>
+            <View style={styles.titleContainer}>
+              <Text style={styles.modalTitle}>
+                {isEditMode ? 'Edit Turf Details' : 'Add Turf Details'}
+              </Text>
+              {isEditMode && (
+                <Text style={styles.editModeHint}>
+                  💡 Tip: Use "Skip to Slots" to avoid API costs if no changes needed
+                </Text>
+              )}
+            </View>
             <TouchableOpacity onPress={() => resetModalState()}>
               <Ionicons name="close" size={24} color={theme.colors.gray} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.form}>
+          <ScrollView 
+            style={styles.form} 
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.formContent}
+          >
             <View style={styles.formGroup}>
               <Text style={styles.label}>Turf Name *</Text>
               <TextInput
@@ -567,11 +592,22 @@ const TurfManagementScreen = () => {
               variant="outline"
               onPress={() => resetModalState()}
               style={styles.cancelButton}
+              textStyle={styles.buttonText}
             />
+            {isEditMode && (
+              <Button
+                title="Slots"
+                variant="outline"
+                onPress={skipToSlotsManagement}
+                style={styles.skipButton}
+                textStyle={styles.buttonText}
+              />
+            )}
             <Button
               title={isEditMode ? 'Update' : 'Next'}
               onPress={handleTurfDetailsSubmit}
               style={styles.saveButton}
+              textStyle={styles.buttonText}
               disabled={processing}
               loading={processing}
             />
@@ -700,19 +736,22 @@ const TurfManagementScreen = () => {
               variant="outline"
               onPress={() => resetModalState()}
               style={styles.cancelButton}
+              textStyle={styles.buttonText}
             />
             {isEditMode && (
               <Button
-                title="Skip to Availability"
+                title="Skip"
                 variant="outline"
                 onPress={skipSlotManagement}
-                style={styles.cancelButton}
+                style={styles.skipButton}
+                textStyle={styles.buttonText}
               />
             )}
             <Button
-              title={isEditMode ? "Update Slots" : "Save Slots"}
+              title={isEditMode ? "Update" : "Save"}
               onPress={saveSlotConfigurations}
               style={styles.saveButton}
+              textStyle={styles.buttonText}
               disabled={processing}
               loading={processing}
             />
@@ -862,23 +901,39 @@ const createStyles = (theme: any) => StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '90%',
+    display: 'flex',
+    flexDirection: 'column',
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
+  },
+  titleContainer: {
+    flex: 1,
+    paddingRight: 16,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: '600',
     color: theme.colors.text,
   },
+  editModeHint: {
+    fontSize: 12,
+    color: theme.colors.textSecondary,
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
   form: {
     padding: 20,
-    maxHeight: 400,
+    flexGrow: 1,
+    maxHeight: 350,
+  },
+  formContent: {
+    paddingBottom: 20,
   },
   formGroup: {
     marginBottom: 16,
@@ -904,19 +959,39 @@ const createStyles = (theme: any) => StyleSheet.create({
   },
   modalActions: {
     flexDirection: 'row',
-    gap: 12,
-    padding: 20,
+    gap: 6,
+    padding: 16,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap', // Prevent wrapping to ensure single line
+    backgroundColor: theme.colors.surface,
+    minHeight: 72,
+    alignItems: 'center',
   },
   cancelButton: {
     flex: 1,
-    minWidth: 100,
+    minWidth: 80,
+    maxWidth: 120,
+    minHeight: 44,
+    paddingHorizontal: 12, // Override default padding
+  },
+  skipButton: {
+    flex: 1,
+    minWidth: 80,
+    maxWidth: 120,
+    minHeight: 44,
+    paddingHorizontal: 12, // Override default padding
   },
   saveButton: {
     flex: 1,
-    minWidth: 100,
+    minWidth: 80,
+    maxWidth: 120,
+    minHeight: 44,
+    paddingHorizontal: 12, // Override default padding
+  },
+  buttonText: {
+    fontSize: 14, // Smaller font size for three-button layout
+    fontWeight: '600',
   },
   // Slot management styles
   priceControlContainer: {

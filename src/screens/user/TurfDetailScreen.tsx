@@ -70,17 +70,20 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
   const { theme } = useTheme();
 
   // Utility function to generate time slots based on slotId (1-24 for 24 hours)
-  const generateTimeSlot = (slotId: number, isAvailable: boolean): TimeSlot => {
+  const generateTimeSlot = (slotId: number, isAvailable: boolean, price: number): TimeSlot => {
     const hour = slotId - 1; // slotId 1 = hour 0 (00:00-01:00)
     const startTime = `${hour.toString().padStart(2, '0')}:00`;
-    const endTime = `${(hour + 1).toString().padStart(2, '0')}:00`;
+    
+    // Handle the wrap-around for 24th slot (23:00-00:00)
+    const endHour = slotId === 24 ? 0 : slotId;
+    const endTime = `${endHour.toString().padStart(2, '0')}:00`;
     
     return {
       id: slotId, // Use slotId as the id
       slotId: slotId,
       startTime: startTime,
       endTime: endTime,
-      price: 0, // Will be set based on turf pricing or default
+      price: price, // Use the price from API response
       isAvailable: isAvailable,
       isBooked: !isAvailable,
     };
@@ -148,20 +151,19 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
       
       console.log(`📊 Received ${slotAvailabilityData.length} slot availability records:`, slotAvailabilityData);
       
+      // Sort slots by slotId to ensure correct chronological order (1-24)
+      const sortedSlotData = slotAvailabilityData.sort((a, b) => a.slotId - b.slotId);
+      
       // Generate time slots based on the availability response
-      const timeSlots: TimeSlot[] = slotAvailabilityData.map(slot => {
-        const timeSlot = generateTimeSlot(slot.slotId, slot.available);
+      const timeSlots: TimeSlot[] = sortedSlotData.map(slot => {
+        const timeSlot = generateTimeSlot(slot.slotId, slot.available, slot.price);
         
-        // Set a default price or fetch from turf pricing if available
-        // For now, using minPrice or a default value
-        timeSlot.price = minPrice || 1000; // Default price per hour
-        
-        console.log(`⏰ Generated slot ${slot.slotId}: ${timeSlot.startTime}-${timeSlot.endTime}, available: ${slot.available}`);
+        console.log(`⏰ Generated slot ${slot.slotId}: ${timeSlot.startTime}-${timeSlot.endTime}, available: ${slot.available}, price: ₹${slot.price}`);
         
         return timeSlot;
       });
       
-      console.log(`✅ Total slots generated: ${timeSlots.length}`);
+      console.log(`✅ Total slots generated: ${timeSlots.length} (sorted by slotId)`);
       setAvailableSlots(timeSlots);
     } catch (error) {
       console.error('❌ Error fetching slot availability:', error);
