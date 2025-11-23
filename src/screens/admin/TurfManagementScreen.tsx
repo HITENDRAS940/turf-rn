@@ -17,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { turfAPI, adminAPI } from '../../services/api';
 import { Turf, TurfDetails, TurfCreationResponse, SlotConfig, SlotUpdate } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import LoadingState from '../../components/shared/LoadingState';
 import EmptyState from '../../components/shared/EmptyState';
 import Button from '../../components/shared/Button';
@@ -55,6 +56,7 @@ type ModalStep = 'none' | 'details' | 'slots' | 'availability';
 
 const TurfManagementScreen = () => {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const styles = createStyles(theme);
   const [turfs, setTurfs] = useState<Turf[]>([]);
   const [loading, setLoading] = useState(true);
@@ -93,7 +95,18 @@ const TurfManagementScreen = () => {
 
   const fetchTurfs = async () => {
     try {
-      const response = await turfAPI.getAllTurfs();
+      if (!user?.id) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'User information not available',
+        });
+        setLoading(false);
+        setRefreshing(false);
+        return;
+      }
+
+      const response = await adminAPI.getAdminTurfs(user.id);
       setTurfs(response.data);
     } catch (error) {
       Toast.show({

@@ -82,6 +82,9 @@ export const adminAPI = {
   deleteTurf: (id: number) => api.delete(`/admin/turf/${id}`),
   updateSlotPricing: (data: any) => api.post('/admin/slots/pricing', data),
   
+  // Get turfs for specific admin
+  getAdminTurfs: (userId: number) => api.get(`/admin/${userId}/turfs`),
+  
   // New Turf Creation Flow APIs
   createTurfDetails: (data: { name: string; location: string; description: string; contactNumber?: string }) => 
     api.post('/admin/turf-details', data),
