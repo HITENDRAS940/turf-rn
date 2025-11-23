@@ -1,9 +1,16 @@
 export interface User {
+  id: number;
   phone: string;
-  role: 'ROLE_USER' | 'ROLE_ADMIN';
+  role: 'ROLE_USER' | 'ROLE_ADMIN' | 'ROLE_MANAGER';
   token: string;
   name?: string;
+  email?: string;
   isNewUser?: boolean;
+  // Admin specific fields
+  businessName?: string;
+  businessAddress?: string;
+  enabled?: boolean;
+  createdAt?: string;
 }
 
 export interface Turf {
@@ -136,4 +143,32 @@ export interface SlotUpdate {
   enabled: boolean;
   priceChanged: boolean;
   enabledChanged: boolean;
+}
+
+export interface CreateAdminPayload {
+  phone: string;
+  email: string;
+  name: string;
+  businessName: string;
+  businessAddress: string;
+}
+
+export interface AdminResponse {
+  id: number;
+  phone: string;
+  email: string;
+  name: string;
+  role: 'ROLE_ADMIN';
+  enabled: boolean;
+  createdAt: string;
+  businessName: string;
+  businessAddress: string;
+}
+
+export interface ManagerTurfResponse {
+  id: number;
+  name: string;
+  location: string;
+  createdBy: number;
+  createdByName: string;
 }

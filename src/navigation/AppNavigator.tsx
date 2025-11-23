@@ -5,13 +5,14 @@ import { useAuth } from '../contexts/AuthContext';
 import AuthNavigator from './AuthNavigator';
 import UserNavigator from './UserNavigator';
 import AdminNavigator from './AdminNavigator';
+import ManagerNavigator from './ManagerNavigator';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
-  const { user, isAdmin, isLoading } = useAuth();
+  const { user, isAdmin, isManager, isLoading } = useAuth();
   const { theme } = useTheme();
 
   if (isLoading) {
@@ -37,6 +38,11 @@ const AppNavigator = () => {
     // Admin user - show admin interface
     if (isAdmin) {
       return <Stack.Screen name="Admin" component={AdminNavigator} />;
+    }
+
+    // Manager user - show manager interface
+    if (isManager) {
+      return <Stack.Screen name="Manager" component={ManagerNavigator} />;
     }
     
     // Regular user - show user interface

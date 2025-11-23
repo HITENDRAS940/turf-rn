@@ -1,6 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../constants/config';
+import { CreateAdminPayload, AdminResponse, ManagerTurfResponse } from '../types';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -118,4 +119,38 @@ export const adminAPI = {
     api.get(`/admin/turf/${turfId}/availability`),
 };
 
-export default api;
+// Manager APIs
+export const managerAPI = {
+  createAdmin: async (data: CreateAdminPayload) => {
+    const response = await api.post<AdminResponse>('/manager/admins', data);
+    return response.data;
+  },
+
+  getAllAdmins: async () => {
+    const response = await api.get<AdminResponse[]>('/manager/admins');
+    return response.data;
+  },
+
+  deleteAdmin: async (adminId: number) => {
+    const response = await api.delete<{ message: string }>(`/manager/admins/${adminId}`);
+    return response.data;
+  },
+
+  getAllTurfsManager: async () => {
+    const response = await api.get<ManagerTurfResponse[]>('/manager/turfs');
+    return response.data;
+  },
+};
+
+// Export combined API object for convenience
+export { api };
+export default {
+  ...api,
+  ...managerAPI,
+  auth: authAPI,
+  user: userAPI,
+  turf: turfAPI,
+  booking: bookingAPI,
+  admin: adminAPI,
+  manager: managerAPI,
+};

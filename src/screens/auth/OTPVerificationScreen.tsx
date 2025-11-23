@@ -37,7 +37,7 @@ const OTPVerificationScreen = ({ route, navigation }: any) => {
     setLoading(true);
     try {
       const response = await authAPI.verifyOTP(phone, otp);
-      const { token, tokenType, newUser } = response.data;
+      const { token, newUser } = response.data;
       
       // Decode JWT to get role and user details
       const payload = JSON.parse(atob(token.split('.')[1]));
@@ -45,10 +45,10 @@ const OTPVerificationScreen = ({ route, navigation }: any) => {
       const userId = payload.userId;
 
       const userData = { 
+        id: userId,
         token, 
         phone, 
         role, 
-        userId,
         isNewUser: newUser,
         name: undefined // Initialize name as undefined, will be set later in SetNameScreen
       } as User;

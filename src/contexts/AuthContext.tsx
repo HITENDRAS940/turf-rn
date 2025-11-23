@@ -5,6 +5,7 @@ import { User } from '../types';
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
+  isManager: boolean;
   login: (userData: User) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (userData: User) => Promise<void>;
@@ -71,9 +72,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const isAdmin = user?.role === 'ROLE_ADMIN';
+  const isManager = user?.role === 'ROLE_MANAGER';
 
   return (
-    <AuthContext.Provider value={{ user, isAdmin, login, logout, updateUser, isLoading }}>
+    <AuthContext.Provider value={{ user, isAdmin, isManager, login, logout, updateUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
