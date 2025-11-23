@@ -20,10 +20,9 @@ const AdminDetailScreen = () => {
       icon: 'football',
       color: '#10B981',
       action: () => {
-        Toast.show({
-          type: 'info',
-          text1: 'Coming Soon',
-          text2: 'View turfs feature under development',
+        navigation.navigate('AdminTurfs', { 
+          adminProfileId: admin.id, 
+          adminName: admin.name 
         });
       }
     },

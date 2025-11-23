@@ -143,6 +143,24 @@ export const managerAPI = {
     const response = await api.get<ManagerTurfResponse[]>('/manager/turfs');
     return response.data;
   },
+
+  getAdminTurfs: async (adminProfileId: number) => {
+    const response = await api.get(`/manager/admins/${adminProfileId}/turfs`);
+    return response.data;
+  },
+
+  getTurfBookings: async (turfId: number, date?: string) => {
+    const url = date 
+      ? `/manager/turfs/${turfId}/bookings?date=${date}` 
+      : `/manager/turfs/${turfId}/bookings`;
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  getTurfRevenue: async (turfId: number, date: string) => {
+    const response = await api.get(`/manager/turfs/${turfId}/revenue?date=${date}`);
+    return response.data;
+  },
 };
 
 // Export combined API object for convenience
