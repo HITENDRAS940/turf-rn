@@ -13,6 +13,7 @@ import {
   Switch,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { turfAPI, adminAPI } from '../../services/api';
 import { Turf, TurfDetails, TurfCreationResponse, SlotConfig, SlotUpdate } from '../../types';
@@ -57,6 +58,8 @@ type ModalStep = 'none' | 'details' | 'slots' | 'availability';
 const TurfManagementScreen = () => {
   const { theme } = useTheme();
   const { user } = useAuth();
+  const navigation = useNavigation<any>();
+  const route = useRoute<any>();
   const styles = createStyles(theme);
   const [turfs, setTurfs] = useState<Turf[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,6 +88,15 @@ const TurfManagementScreen = () => {
   useEffect(() => {
     fetchTurfs();
   }, []);
+
+  // Handle edit navigation from AdminTurfDetailScreen
+  useEffect(() => {
+    if (route.params?.editTurf) {
+      startTurfEdit(route.params.editTurf);
+      // Clear the param after handling
+      navigation.setParams({ editTurf: undefined });
+    }
+  }, [route.params?.editTurf]);
 
   // Load slot configurations when entering slots step in edit mode
   useEffect(() => {
@@ -518,9 +530,7 @@ const TurfManagementScreen = () => {
   const renderTurfCard = ({ item }: { item: Turf }) => (
     <AdminTurfCard
       turf={item}
-      onEdit={() => startTurfEdit(item)}
-      onDelete={() => handleDelete(item)}
-      onImagesUpdated={fetchTurfs}
+      onPress={() => navigation.navigate('AdminTurfDetail', { turf: item })}
     />
   );
 

@@ -85,6 +85,15 @@ export const adminAPI = {
   // Get turfs for specific admin
   getAdminTurfs: (userId: number) => api.get(`/admin/${userId}/turfs`),
   
+  // Get bookings for a specific turf
+  getTurfBookings: async (turfId: number, date?: string) => {
+    const url = date 
+      ? `/admin/turf/${turfId}/bookings?date=${date}` 
+      : `/admin/turf/${turfId}/bookings`;
+    const response = await api.get(url);
+    return response.data;
+  },
+  
   // New Turf Creation Flow APIs
   createTurfDetails: (data: { name: string; location: string; description: string; contactNumber?: string }) => 
     api.post('/admin/turf-details', data),
