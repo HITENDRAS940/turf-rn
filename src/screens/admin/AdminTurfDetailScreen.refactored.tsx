@@ -79,6 +79,7 @@ const AdminTurfDetailScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [slotsWithBookings, setSlotsWithBookings] = useState<TurfSlot[]>([]);
   const [currentStep, setCurrentStep] = useState<ModalStep>('none');
+  const [imageRefreshKey, setImageRefreshKey] = useState(Date.now());
   
   // Modal-specific state
   const [turfDetailsData, setTurfDetailsData] = useState<TurfDetailsData>({
@@ -90,9 +91,6 @@ const AdminTurfDetailScreen = () => {
   });
   const [slots, setSlots] = useState<SlotConfig[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
-  const [imageUploading, setImageUploading] = useState(false);
-  const [imageDeleting, setImageDeleting] = useState(false);
-  const [currentTurfData, setCurrentTurfData] = useState(turf);
 
   // Data Fetching
   useEffect(() => {
@@ -102,10 +100,6 @@ const AdminTurfDetailScreen = () => {
   const fetchTurfData = async () => {
     try {
       const dateStr = formatDateToYYYYMMDD(selectedDate);
-      
-      // Fetch updated turf data to get latest images
-      const turfResponse = await turfAPI.getTurfById(turf.id);
-      setCurrentTurfData(turfResponse.data);
       
       // Fetch bookings for this turf on the selected date
       const bookingsData = await adminAPI.getTurfBookings(turf.id, dateStr);
@@ -338,7 +332,6 @@ const AdminTurfDetailScreen = () => {
   };
 
   const handleImageUpload = async (images: any[]) => {
-    setImageUploading(true);
     try {
       const formData = new FormData();
       images.forEach((asset, index) => {
@@ -357,8 +350,8 @@ const AdminTurfDetailScreen = () => {
         text2: 'Images uploaded successfully',
       });
       
-      // Refresh turf data to get updated images
-      await fetchTurfData();
+      setImageRefreshKey(Date.now());
+      fetchTurfData();
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -366,13 +359,10 @@ const AdminTurfDetailScreen = () => {
         text2: error.response?.data?.message || 'Failed to upload images',
       });
       throw error;
-    } finally {
-      setImageUploading(false);
     }
   };
 
   const handleImageDelete = async (imageUrls: string[]) => {
-    setImageDeleting(true);
     try {
       await adminAPI.deleteTurfImages(turf.id, imageUrls);
       
@@ -382,8 +372,8 @@ const AdminTurfDetailScreen = () => {
         text2: 'Images deleted successfully',
       });
       
-      // Refresh turf data to get updated images
-      await fetchTurfData();
+      setImageRefreshKey(Date.now());
+      fetchTurfData();
     } catch (error: any) {
       Toast.show({
         type: 'error',
@@ -391,8 +381,6 @@ const AdminTurfDetailScreen = () => {
         text2: error.response?.data?.message || 'Failed to delete images',
       });
       throw error;
-    } finally {
-      setImageDeleting(false);
     }
   };
 
@@ -402,6 +390,7 @@ const AdminTurfDetailScreen = () => {
 
   const closeImagesModal = () => {
     setCurrentStep('none');
+    setImageRefreshKey(Date.now());
   };
 
   // Render Bookings List
@@ -593,10 +582,8 @@ const AdminTurfDetailScreen = () => {
         onClose={closeImagesModal}
         onUpload={handleImageUpload}
         onDelete={handleImageDelete}
-        existingImages={currentTurfData.images || []}
-        uploading={imageUploading}
-        deleting={imageDeleting}
-        turfName={currentTurfData.name}
+        existingImages={turf.images || []}
+        turfName={turf.name}
       />
     </SafeAreaView>
   );

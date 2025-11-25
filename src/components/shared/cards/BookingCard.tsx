@@ -1,0 +1,376 @@
+/**
+ * Enhanced BookingCard Component
+ * Reusable card for displaying booking information
+ * Supports both user and admin views with different layouts
+ */
+
+import React from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../../contexts/ThemeContext';
+import StatusBadge from '../StatusBadge';
+import { formatDateToDDMMMYYYY } from '../../../utils/dateUtils';
+import { formatTimeRange } from '../../../utils/slotUtils';
+import { formatCurrency } from '../../../utils/revenueUtils';
+
+interface BookingSlot {
+  slotId: number;
+  startTime: string;
+  endTime: string;
+  price: number;
+}
+
+interface BookingUser {
+  name: string;
+  phone: string;
+}
+
+export interface BookingData {
+  id: number;
+  reference: string;
+  turfName: string;
+  amount: number;
+  status: string;
+  bookingDate: string;
+  createdAt?: string;
+  slotTime?: string;
+  slots: BookingSlot[];
+  user?: BookingUser;
+  totalAmount?: number;
+  date?: string;
+}
+
+interface BookingCardProps {
+  booking: BookingData;
+  variant?: 'user' | 'admin';
+  onPress?: () => void;
+  onCancel?: () => void;
+  showActions?: boolean;
+  showUserInfo?: boolean;
+}
+
+const BookingCard: React.FC<BookingCardProps> = ({
+  booking,
+  variant = 'user',
+  onPress,
+  onCancel,
+  showActions = true,
+  showUserInfo = true,
+}) => {
+  const { theme } = useTheme();
+
+  const formatSlots = (slots: BookingSlot[]) => {
+    if (!slots || slots.length === 0) return 'No slots';
+    if (slots.length === 1) {
+      return formatTimeRange(slots[0].startTime, slots[0].endTime);
+    }
+    return `${slots.length} slots`;
+  };
+
+  const isBookingCancellable = () => {
+    const bookingDate = new Date(booking.bookingDate || booking.date || '');
+    const now = new Date();
+    const diffHours = (bookingDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+    // Allow cancellation if booking is at least 2 hours in the future
+    return diffHours >= 2 && booking.status === 'CONFIRMED';
+  };
+
+  if (variant === 'admin') {
+    return (
+      <TouchableOpacity
+        style={[styles.card, { backgroundColor: theme.colors.card }]}
+        onPress={onPress}
+        disabled={!onPress}
+        activeOpacity={onPress ? 0.7 : 1}
+      >
+        {/* Admin View - User Info Header */}
+        {showUserInfo && booking.user && (
+          <View style={styles.adminHeader}>
+            <View style={[styles.avatar, { backgroundColor: theme.colors.primary + '20' }]}>
+              <Text style={[styles.avatarText, { color: theme.colors.primary }]}>
+                {booking.user.name?.charAt(0)?.toUpperCase() || 'U'}
+              </Text>
+            </View>
+            <View style={styles.userInfo}>
+              <Text style={[styles.userName, { color: theme.colors.text }]}>
+                {booking.user.name || 'Unknown User'}
+              </Text>
+              <View style={styles.phoneRow}>
+                <Ionicons name="call-outline" size={12} color={theme.colors.textSecondary} />
+                <Text style={[styles.phoneText, { color: theme.colors.textSecondary }]}>
+                  {booking.user.phone || 'N/A'}
+                </Text>
+              </View>
+            </View>
+            <View style={[styles.amountBadge, { backgroundColor: '#10B981' + '20' }]}>
+              <Text style={[styles.amountText, { color: '#10B981' }]}>
+                {formatCurrency(booking.amount || booking.totalAmount || 0)}
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Booked Slots */}
+        <View style={styles.slotsSection}>
+          <Text style={[styles.slotsLabel, { color: theme.colors.textSecondary }]}>
+            Booked Slots:
+          </Text>
+          <View style={styles.slotsGrid}>
+            {(booking.slots || []).map((slot, index) => (
+              <View
+                key={`${booking.id}-${slot.slotId}-${index}`}
+                style={[styles.slotChip, { backgroundColor: theme.colors.primary + '15' }]}
+              >
+                <Text style={[styles.slotChipText, { color: theme.colors.primary }]}>
+                  {formatTimeRange(slot.startTime, slot.endTime)}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Status Row */}
+        <View style={[styles.statusRow, { borderTopColor: theme.colors.border }]}>
+          <Ionicons
+            name={booking.status === 'CONFIRMED' ? 'checkmark-circle' : 'time-outline'}
+            size={16}
+            color={booking.status === 'CONFIRMED' ? '#10B981' : '#F59E0B'}
+          />
+          <Text
+            style={[
+              styles.statusText,
+              { color: booking.status === 'CONFIRMED' ? '#10B981' : '#F59E0B' },
+            ]}
+          >
+            {booking.status || 'PENDING'}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
+  // User View
+  return (
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: theme.colors.card }]}
+      onPress={onPress}
+      disabled={!onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+    >
+      {/* User View - Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <Text style={[styles.turfName, { color: theme.colors.text }]}>
+            {booking.turfName}
+          </Text>
+          <StatusBadge status={(booking.status as 'CONFIRMED' | 'CANCELLED' | 'PENDING' | 'COMPLETED') || 'PENDING'} />
+        </View>
+        <Text style={[styles.bookingId, { color: theme.colors.textSecondary }]}>
+          #{booking.reference || booking.id}
+        </Text>
+      </View>
+
+      <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
+
+      {/* User View - Content */}
+      <View style={styles.content}>
+        <View style={styles.infoRow}>
+          <Ionicons name="calendar-outline" size={16} color={theme.colors.textSecondary} />
+          <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
+            {formatDateToDDMMMYYYY(booking.bookingDate || booking.date || '')}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Ionicons name="time-outline" size={16} color={theme.colors.textSecondary} />
+          <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>
+            {booking.slotTime || formatSlots(booking.slots)}
+          </Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Ionicons name="cash-outline" size={16} color={theme.colors.textSecondary} />
+          <Text style={[styles.priceText, { color: theme.colors.primary }]}>
+            {formatCurrency(booking.amount || booking.totalAmount || 0)}
+          </Text>
+        </View>
+
+        {booking.createdAt && (
+          <View style={styles.infoRow}>
+            <Ionicons name="calendar-outline" size={16} color={theme.colors.textSecondary} />
+            <Text style={[styles.infoSubText, { color: theme.colors.textSecondary }]}>
+              Booked on {formatDateToDDMMMYYYY(booking.createdAt)}
+            </Text>
+          </View>
+        )}
+      </View>
+
+      {/* User View - Actions */}
+      {showActions && isBookingCancellable() && onCancel && (
+        <View style={[styles.actions, { borderTopColor: theme.colors.border }]}>
+          <TouchableOpacity
+            style={[styles.cancelButton, { borderColor: theme.colors.error }]}
+            onPress={onCancel}
+          >
+            <Ionicons name="close-circle-outline" size={16} color={theme.colors.error} />
+            <Text style={[styles.cancelButtonText, { color: theme.colors.error }]}>
+              Cancel Booking
+            </Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </TouchableOpacity>
+  );
+};
+
+const styles = StyleSheet.create({
+  card: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  // User View Styles
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  headerLeft: {
+    flex: 1,
+    gap: 8,
+  },
+  turfName: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  bookingId: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  divider: {
+    height: 1,
+    marginBottom: 12,
+  },
+  content: {
+    gap: 8,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  infoText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  infoSubText: {
+    fontSize: 12,
+  },
+  priceText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  actions: {
+    marginTop: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  cancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    backgroundColor: '#FEF2F2',
+  },
+  cancelButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  // Admin View Styles
+  adminHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    gap: 12,
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  avatarText: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  phoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  phoneText: {
+    fontSize: 12,
+  },
+  amountBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  amountText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  slotsSection: {
+    marginBottom: 12,
+  },
+  slotsLabel: {
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  slotsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  slotChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  slotChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingTop: 12,
+    borderTopWidth: 1,
+  },
+  statusText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
+
+export default BookingCard;

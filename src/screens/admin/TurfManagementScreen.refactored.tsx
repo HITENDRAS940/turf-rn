@@ -64,11 +64,7 @@ const TurfManagementScreen = () => {
 
   const fetchTurfs = async () => {
     try {
-      if (!user?.id) {
-        setTurfs([]);
-        return;
-      }
-      const response = await adminAPI.getAdminTurfs(user.id);
+      const response = await turfAPI.getAllTurfs();
       const turfList = response.data || response || [];
       setTurfs(Array.isArray(turfList) ? turfList : []);
     } catch (error: any) {
