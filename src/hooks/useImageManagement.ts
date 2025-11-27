@@ -11,7 +11,6 @@ import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { adminAPI } from '../services/api';
-import Toast from 'react-native-toast-message';
 
 interface ImageAsset {
   uri: string;
@@ -121,11 +120,7 @@ export const useImageManagement = (options?: UseImageManagementOptions) => {
       const errorMsg = 'Turf ID is required for image upload';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMsg,
-      });
+      Alert.alert('Error', errorMsg);
       return;
     }
 
@@ -151,11 +146,7 @@ export const useImageManagement = (options?: UseImageManagementOptions) => {
       
       const successMsg = `${selectedImages.length} image${selectedImages.length > 1 ? 's' : ''} uploaded successfully`;
       options?.onSuccess?.(successMsg);
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: successMsg,
-      });
+      Alert.alert('Success', successMsg);
       
       // Clear selected images after successful upload
       setSelectedImages([]);
@@ -164,11 +155,7 @@ export const useImageManagement = (options?: UseImageManagementOptions) => {
       const errorMsg = err.response?.data?.message || 'Failed to upload images';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMsg,
-      });
+      Alert.alert('Error', errorMsg);
       throw err;
     } finally {
       setUploading(false);
@@ -192,22 +179,14 @@ export const useImageManagement = (options?: UseImageManagementOptions) => {
       
       const successMsg = `${imageUrls.length} image${imageUrls.length > 1 ? 's' : ''} deleted successfully`;
       options?.onSuccess?.(successMsg);
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: successMsg,
-      });
+      Alert.alert('Success', successMsg);
       
       options?.onDeleteComplete?.();
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 'Failed to delete images';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMsg,
-      });
+      Alert.alert('Error', errorMsg);
       throw err;
     } finally {
       setDeleting(false);

@@ -6,7 +6,6 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { adminAPI, turfAPI } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
 import { format } from 'date-fns';
 
 // Shared Components
@@ -143,11 +142,7 @@ const AdminTurfDetailScreen = () => {
 
     } catch (error: any) {
       console.error('Error fetching turf data:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to fetch turf data',
-      });
+      Alert.alert('Error', error.response?.data?.message || 'Failed to fetch turf data');
       
       setBookings([]);
       const defaultRevenue = calculateRevenueData([], turf.slots || []);
@@ -189,11 +184,7 @@ const AdminTurfDetailScreen = () => {
       
       setCurrentStep('details');
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to fetch turf details',
-      });
+      Alert.alert('Error', error.response?.data?.message || 'Failed to fetch turf details');
     }
   };
   
@@ -216,11 +207,7 @@ const AdminTurfDetailScreen = () => {
       }
     } catch (error: any) {
       console.error('Error loading slots:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to load slots',
-      });
+      Alert.alert('Error', 'Failed to load slots');
     } finally {
       setSlotsLoading(false);
     }
@@ -238,18 +225,10 @@ const AdminTurfDetailScreen = () => {
           onPress: async () => {
             try {
               await adminAPI.deleteTurf(turf.id);
-              Toast.show({
-                type: 'success',
-                text1: 'Success',
-                text2: 'Turf deleted successfully',
-              });
+              Alert.alert('Success', 'Turf deleted successfully');
               navigation.goBack();
             } catch (error: any) {
-              Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: error.response?.data?.message || 'Failed to delete turf',
-              });
+              Alert.alert('Error', error.response?.data?.message || 'Failed to delete turf');
             }
           }
         },
@@ -292,19 +271,11 @@ const AdminTurfDetailScreen = () => {
         contactNumber: '', // Add if needed
       });
       
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Turf details updated successfully',
-      });
+      Alert.alert('Success', 'Turf details updated successfully');
       
       fetchTurfData();
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to update turf details',
-      });
+      Alert.alert('Error', error.response?.data?.message || 'Failed to update turf details');
     }
   };
 
@@ -358,20 +329,12 @@ const AdminTurfDetailScreen = () => {
 
       await adminAPI.uploadTurfImages(turf.id, formData);
       
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Images uploaded successfully',
-      });
+      Alert.alert('Success', 'Images uploaded successfully');
       
       // Refresh turf data to get updated images
       await fetchTurfData();
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to upload images',
-      });
+      Alert.alert('Error', error.response?.data?.message || 'Failed to upload images');
       throw error;
     } finally {
       setImageUploading(false);
@@ -383,20 +346,12 @@ const AdminTurfDetailScreen = () => {
     try {
       await adminAPI.deleteTurfImages(turf.id, imageUrls);
       
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Images deleted successfully',
-      });
+      Alert.alert('Success', 'Images deleted successfully');
       
       // Refresh turf data to get updated images
       await fetchTurfData();
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to delete images',
-      });
+      Alert.alert('Error', error.response?.data?.message || 'Failed to delete images');
       throw error;
     } finally {
       setImageDeleting(false);
@@ -465,38 +420,52 @@ const AdminTurfDetailScreen = () => {
       </View>
 
       {/* Management Action Buttons */}
-      <View style={[styles.actionButtonsRow, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border }]}>
-        <TouchableOpacity 
-          style={[styles.actionButtonItem, { borderRightColor: theme.colors.border }]}
-          onPress={handleManageImages}
+      <View style={[styles.actionButtonsContainer, { backgroundColor: theme.colors.background }]}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.actionButtonsRow}
         >
-          <Ionicons name="images" size={20} color={theme.colors.primary} />
-          <Text style={[styles.actionButtonText, { color: theme.colors.primary }]}>Images</Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.actionButtonItem, { backgroundColor: theme.colors.primary + '15' }]}
+            onPress={handleManageImages}
+          >
+            <View style={[styles.actionIconContainer, { backgroundColor: theme.colors.primary + '20' }]}>
+              <Ionicons name="images" size={22} color={theme.colors.primary} />
+            </View>
+            <Text style={[styles.actionButtonText, { color: theme.colors.primary }]}>Images</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.actionButtonItem, { borderRightColor: theme.colors.border }]}
-          onPress={handleEditTurf}
-        >
-          <Ionicons name="pencil" size={20} color={theme.colors.primary} />
-          <Text style={[styles.actionButtonText, { color: theme.colors.primary }]}>Edit</Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.actionButtonItem, { backgroundColor: theme.colors.primary + '15' }]}
+            onPress={handleEditTurf}
+          >
+            <View style={[styles.actionIconContainer, { backgroundColor: theme.colors.primary + '20' }]}>
+              <Ionicons name="create" size={22} color={theme.colors.primary} />
+            </View>
+            <Text style={[styles.actionButtonText, { color: theme.colors.primary }]}>Edit Turf</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={[styles.actionButtonItem, { borderRightColor: theme.colors.border }]}
-          onPress={handleManualBooking}
-        >
-          <Ionicons name="add-circle" size={20} color={theme.colors.success || '#10B981'} />
-          <Text style={[styles.actionButtonText, { color: theme.colors.success || '#10B981' }]}>Book</Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.actionButtonItem, { backgroundColor: '#10B98115' }]}
+            onPress={handleManualBooking}
+          >
+            <View style={[styles.actionIconContainer, { backgroundColor: '#10B98120' }]}>
+              <Ionicons name="add-circle" size={22} color="#10B981" />
+            </View>
+            <Text style={[styles.actionButtonText, { color: '#10B981' }]}>Book Slot</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity 
-          style={styles.actionButtonItem}
-          onPress={handleDeleteTurf}
-        >
-          <Ionicons name="trash" size={20} color={theme.colors.error} />
-          <Text style={[styles.actionButtonText, { color: theme.colors.error }]}>Delete</Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.actionButtonItem, { backgroundColor: theme.colors.error + '15' }]}
+            onPress={handleDeleteTurf}
+          >
+            <View style={[styles.actionIconContainer, { backgroundColor: theme.colors.error + '20' }]}>
+              <Ionicons name="trash" size={22} color={theme.colors.error} />
+            </View>
+            <Text style={[styles.actionButtonText, { color: theme.colors.error }]}>Delete</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </View>
 
       {/* Date Selector */}
@@ -665,26 +634,33 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     flex: 1,
   },
+  actionButtonsContainer: {
+    paddingVertical: 12,
+  },
   actionButtonsRow: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingHorizontal: 16,
+    gap: 10,
   },
   actionButtonItem: {
-    flex: 1,
-    flexDirection: 'row',
+    flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
-    gap: 6,
-    borderRightWidth: 1,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    gap: 8,
+    minWidth: 85,
+  },
+  actionIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   actionButtonText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
   },
   dateSelector: {
