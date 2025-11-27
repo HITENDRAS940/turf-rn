@@ -218,23 +218,31 @@ const SlotsManagementModal: React.FC<Props> = ({
             <View
               style={[
                 styles.header,
-                { borderBottomColor: theme.colors.border, backgroundColor: theme.colors.card },
+                { 
+                  borderBottomColor: theme.colors.border || 'rgba(0,0,0,0.1)', 
+                  backgroundColor: theme.colors.card 
+                },
               ]}
             >
-              <View>
-                <Text style={[styles.title, { color: theme.colors.text }]}>
-                  Slot Management
-                </Text>
-                {turfName && (
-                  <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-                    {turfName}
+              <View style={styles.headerLeft}>
+                <TouchableOpacity 
+                  onPress={handleClose}
+                  disabled={loading || isSaving}
+                  style={[styles.closeButton, { backgroundColor: theme.colors.background }]}
+                >
+                  <Ionicons name="close" size={24} color={theme.colors.text} />
+                </TouchableOpacity>
+                <View style={styles.titleContainer}>
+                  <Text style={[styles.title, { color: theme.colors.text }]}>
+                    Slot Management
                   </Text>
-                )}
+                  {turfName && (
+                    <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+                      {turfName}
+                    </Text>
+                  )}
+                </View>
               </View>
-
-              <TouchableOpacity onPress={handleClose}>
-                <Ionicons name="close" size={24} color={theme.colors.text} />
-              </TouchableOpacity>
             </View>
 
             {/* Scrollable content */}
@@ -387,14 +395,40 @@ const SlotsManagementModal: React.FC<Props> = ({
 
 const styles = StyleSheet.create({
   header: {
-    padding: 16,
-    borderBottomWidth: 1,
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
-
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+    flex: 1,
+  },
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  titleContainer: {
+    flex: 1,
+  },
   title: { fontSize: 20, fontWeight: "700" },
-  subtitle: { fontSize: 14, marginTop: 4 },
+  subtitle: { fontSize: 14, marginTop: 2 },
 
   section: { padding: 16, borderBottomWidth: 1 },
 

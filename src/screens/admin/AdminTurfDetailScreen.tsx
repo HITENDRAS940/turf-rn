@@ -187,6 +187,15 @@ const AdminTurfDetailScreen = () => {
       Alert.alert('Error', error.response?.data?.message || 'Failed to fetch turf details');
     }
   };
+
+  const handleManageSlots = async () => {
+    await loadSlots();
+    setCurrentStep('slots');
+  };
+
+  const handleManageAvailability = () => {
+    setCurrentStep('availability');
+  };
   
   const loadSlots = async () => {
     setSlotsLoading(true);
@@ -447,6 +456,26 @@ const AdminTurfDetailScreen = () => {
           </TouchableOpacity>
 
           <TouchableOpacity 
+            style={[styles.actionButtonItem, { backgroundColor: theme.colors.primary + '15' }]}
+            onPress={handleManageSlots}
+          >
+            <View style={[styles.actionIconContainer, { backgroundColor: theme.colors.primary + '20' }]}>
+              <Ionicons name="time" size={22} color={theme.colors.primary} />
+            </View>
+            <Text style={[styles.actionButtonText, { color: theme.colors.primary }]}>Slots</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.actionButtonItem, { backgroundColor: theme.colors.primary + '15' }]}
+            onPress={handleManageAvailability}
+          >
+            <View style={[styles.actionIconContainer, { backgroundColor: theme.colors.primary + '20' }]}>
+              <Ionicons name="toggle" size={22} color={theme.colors.primary} />
+            </View>
+            <Text style={[styles.actionButtonText, { color: theme.colors.primary }]}>Availability</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
             style={[styles.actionButtonItem, { backgroundColor: '#10B98115' }]}
             onPress={handleManualBooking}
           >
@@ -544,19 +573,14 @@ const AdminTurfDetailScreen = () => {
         visible={currentStep === 'details'}
         onClose={closeModal}
         onSave={handleTurfDetailsSave}
-        onSkipToSlots={() => {
-          loadSlots();
-          setCurrentStep('slots');
-        }}
         initialData={turfDetailsData}
-        showSkipButton={true}
+        showSkipButton={false}
       />
 
       <SlotsManagementModal
         visible={currentStep === 'slots'}
         onClose={closeModal}
         onSave={handleSlotsSave}
-        onSkip={() => setCurrentStep('availability')}
         slots={slots}
         loading={slotsLoading}
         showRefresh={true}
