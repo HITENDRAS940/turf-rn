@@ -68,7 +68,7 @@ export const bookingAPI = {
     slotIds: number[];
     bookingDate: string;
     paymentDetails: object;
-  }) => api.post('/user/bookings', data),
+  }) => api.post('/bookings/user', data),
   getUserBookings: () => api.get('/user/bookings'),
   cancelBooking: (id: number) => api.delete(`/user/bookings/${id}`),
 };
@@ -129,6 +129,10 @@ export const adminAPI = {
     api.patch(`/admin/turf/${turfId}/notAvailable`),
   getTurfAvailability: (turfId: number) => 
     api.get(`/admin/turf/${turfId}/availability`),
+  
+  // Manual Booking by Admin
+  createManualBooking: (data: { turfId: number; slotIds: number[]; bookingDate: string }) =>
+    api.post('/admin/booking', data),
 };
 
 // Manager APIs

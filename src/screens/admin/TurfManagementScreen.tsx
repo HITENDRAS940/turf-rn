@@ -222,20 +222,10 @@ const TurfManagementScreen = () => {
         }
       }
       
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Slot configurations saved successfully',
-      });
-      
+      // Refresh turfs to reflect latest DB state
       fetchTurfs();
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to save slot configurations',
-      });
-      throw error;
+      throw error; // Re-throw to let modal handle the error
     }
   };
 

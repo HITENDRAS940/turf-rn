@@ -1,0 +1,556 @@
+/**
+ * ManualBookingModal – Admin Manual Booking
+ * Allows admin to manually book slots for walk-in customers
+ */
+
+import React from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Modal,
+  ScrollView,
+  TouchableOpacity,
+  ActivityIndicator,
+  Platform,
+  KeyboardAvoidingView,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+
+import { useTheme } from "../../../contexts/ThemeContext";
+import Button from "../Button";
+import { formatTime, getSlotColors } from "../../../utils/slotUtils";
+
+interface SlotData {
+  id: number;
+  startTime: string;
+  endTime: string;
+  price: number;
+  enabled: boolean;
+  isBooked?: boolean;
+}
+
+interface Props {
+  visible: boolean;
+  onClose: () => void;
+  onConfirm: (slotIds: number[]) => Promise<void>;
+  slots: SlotData[];
+  turfName?: string;
+  selectedDate: string;
+  loading?: boolean;
+}
+
+const ManualBookingModal: React.FC<Props> = ({
+  visible,
+  onClose,
+  onConfirm,
+  slots,
+  turfName,
+  selectedDate,
+  loading = false,
+}) => {
+  const { theme } = useTheme();
+  
+  const [selectedSlots, setSelectedSlots] = React.useState<number[]>([]);
+  const [isClosing, setIsClosing] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Reset state when modal opens
+  React.useEffect(() => {
+    if (visible) {
+      setSelectedSlots([]);
+      setIsClosing(false);
+    }
+  }, [visible]);
+
+  // Filter to only show available (enabled & not booked) slots
+  const availableSlots = slots
+    .filter((slot) => slot.enabled && !slot.isBooked)
+    .sort((a, b) => a.id - b.id);
+
+  const toggleSlotSelection = (slotId: number) => {
+    setSelectedSlots((prev) =>
+      prev.includes(slotId)
+        ? prev.filter((id) => id !== slotId)
+        : [...prev, slotId]
+    );
+  };
+
+  const selectAllSlots = () => {
+    if (selectedSlots.length === availableSlots.length) {
+      setSelectedSlots([]);
+    } else {
+      setSelectedSlots(availableSlots.map((slot) => slot.id));
+    }
+  };
+
+  const calculateTotal = () => {
+    return selectedSlots.reduce((total, slotId) => {
+      const slot = slots.find((s) => s.id === slotId);
+      return total + (slot?.price || 0);
+    }, 0);
+  };
+
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
+
+  const handleConfirm = () => {
+    if (selectedSlots.length === 0) {
+      Alert.alert("No Slots Selected", "Please select at least one slot to book.");
+      return;
+    }
+
+    const selectedSlotDetails = selectedSlots
+      .map((id) => slots.find((s) => s.id === id))
+      .filter(Boolean)
+      .map((slot) => `${formatTime(slot!.startTime)} - ${formatTime(slot!.endTime)}`)
+      .join("\n");
+
+    Alert.alert(
+      "Confirm Manual Booking",
+      `You are about to create a manual booking for:\n\n${selectedSlotDetails}\n\nTotal: ₹${calculateTotal()}`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Confirm Booking",
+          onPress: async () => {
+            setIsSubmitting(true);
+            try {
+              await onConfirm(selectedSlots);
+              
+              Alert.alert(
+                "Success",
+                "Manual booking created successfully",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      setIsClosing(true);
+                      setTimeout(() => {
+                        onClose();
+                      }, 300);
+                    },
+                  },
+                ]
+              );
+            } catch (error: any) {
+              Alert.alert(
+                "Error",
+                error.response?.data?.message || "Failed to create booking. Please try again.",
+                [{ text: "OK" }]
+              );
+            } finally {
+              setIsSubmitting(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const formatDisplayDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  return (
+    <Modal
+      visible={visible && !isClosing}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={handleClose}
+    >
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
+        >
+          <View style={{ flex: 1 }}>
+            {/* Header */}
+            <View
+              style={[
+                styles.header,
+                { borderBottomColor: theme.colors.border, backgroundColor: theme.colors.card },
+              ]}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.title, { color: theme.colors.text }]}>
+                  Manual Booking
+                </Text>
+                {turfName && (
+                  <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+                    {turfName}
+                  </Text>
+                )}
+              </View>
+
+              <TouchableOpacity onPress={handleClose} disabled={isSubmitting}>
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Date Display */}
+            <View style={[styles.dateContainer, { backgroundColor: theme.colors.card, borderBottomColor: theme.colors.border }]}>
+              <Ionicons name="calendar-outline" size={20} color={theme.colors.primary} />
+              <Text style={[styles.dateText, { color: theme.colors.text }]}>
+                {formatDisplayDate(selectedDate)}
+              </Text>
+            </View>
+
+            {/* Content */}
+            <ScrollView
+              contentContainerStyle={{ paddingBottom: 200 }}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Legend */}
+              <View style={[styles.legendContainer, { backgroundColor: theme.colors.card }]}>
+                <Text style={[styles.legendTitle, { color: theme.colors.text }]}>
+                  Tap to select slots
+                </Text>
+                <View style={styles.legendRow}>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: "#10B981" }]} />
+                    <Text style={[styles.legendText, { color: theme.colors.textSecondary }]}>
+                      Available
+                    </Text>
+                  </View>
+                  <View style={styles.legendItem}>
+                    <View style={[styles.legendDot, { backgroundColor: theme.colors.primary }]} />
+                    <Text style={[styles.legendText, { color: theme.colors.textSecondary }]}>
+                      Selected
+                    </Text>
+                  </View>
+                </View>
+              </View>
+
+              {/* Select All Button */}
+              {availableSlots.length > 0 && (
+                <View style={styles.selectAllContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.selectAllButton,
+                      { 
+                        backgroundColor: selectedSlots.length === availableSlots.length 
+                          ? theme.colors.primary + '20'
+                          : theme.colors.card,
+                        borderColor: theme.colors.primary,
+                      },
+                    ]}
+                    onPress={selectAllSlots}
+                    disabled={isSubmitting}
+                  >
+                    <Ionicons
+                      name={selectedSlots.length === availableSlots.length ? "checkbox" : "square-outline"}
+                      size={20}
+                      color={theme.colors.primary}
+                    />
+                    <Text style={[styles.selectAllText, { color: theme.colors.primary }]}>
+                      {selectedSlots.length === availableSlots.length ? "Deselect All" : "Select All"}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* Slots Grid */}
+              {availableSlots.length === 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Ionicons name="calendar-outline" size={48} color={theme.colors.textSecondary} />
+                  <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
+                    No available slots for this date
+                  </Text>
+                  <Text style={[styles.emptySubtext, { color: theme.colors.textSecondary }]}>
+                    All slots are either booked or disabled
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.slotsContainer}>
+                  <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+                    Available Slots ({availableSlots.length})
+                  </Text>
+                  
+                  <View style={styles.slotsGrid}>
+                    {availableSlots.map((slot) => {
+                      const isSelected = selectedSlots.includes(slot.id);
+                      
+                      return (
+                        <TouchableOpacity
+                          key={slot.id}
+                          style={[
+                            styles.slotChip,
+                            {
+                              backgroundColor: isSelected 
+                                ? theme.colors.primary + '20'
+                                : "#D1FAE5",
+                              borderColor: isSelected 
+                                ? theme.colors.primary
+                                : "#10B981",
+                              borderWidth: isSelected ? 2 : 1,
+                            },
+                          ]}
+                          onPress={() => toggleSlotSelection(slot.id)}
+                          disabled={isSubmitting}
+                        >
+                          <View style={styles.slotChipContent}>
+                            <Text
+                              style={[
+                                styles.slotTime,
+                                { 
+                                  color: isSelected ? theme.colors.primary : "#065F46",
+                                  fontWeight: isSelected ? "700" : "600",
+                                },
+                              ]}
+                            >
+                              {formatTime(slot.startTime)}
+                            </Text>
+                            <Text
+                              style={[
+                                styles.slotPrice,
+                                { color: isSelected ? theme.colors.primary : "#065F46" },
+                              ]}
+                            >
+                              ₹{slot.price}
+                            </Text>
+                          </View>
+                          {isSelected && (
+                            <Ionicons
+                              name="checkmark-circle"
+                              size={16}
+                              color={theme.colors.primary}
+                              style={styles.checkIcon}
+                            />
+                          )}
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+
+            {/* Bottom Summary & Actions */}
+            <View
+              style={[
+                styles.footer,
+                { backgroundColor: theme.colors.card, borderTopColor: theme.colors.border },
+              ]}
+            >
+              {/* Summary */}
+              <View style={styles.summaryContainer}>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>
+                    Selected Slots:
+                  </Text>
+                  <Text style={[styles.summaryValue, { color: theme.colors.text }]}>
+                    {selectedSlots.length}
+                  </Text>
+                </View>
+                <View style={styles.summaryRow}>
+                  <Text style={[styles.summaryLabel, { color: theme.colors.textSecondary }]}>
+                    Total Amount:
+                  </Text>
+                  <Text style={[styles.totalAmount, { color: theme.colors.primary }]}>
+                    ₹{calculateTotal()}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Action Buttons */}
+              <View style={styles.buttonRow}>
+                <Button
+                  title="Cancel"
+                  onPress={handleClose}
+                  variant="outline"
+                  style={styles.footerBtn}
+                  disabled={isSubmitting}
+                />
+                <Button
+                  title={isSubmitting ? "Creating..." : "Create Booking"}
+                  onPress={handleConfirm}
+                  loading={isSubmitting || loading}
+                  style={styles.footerBtn}
+                  disabled={selectedSlots.length === 0 || isSubmitting}
+                />
+              </View>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </Modal>
+  );
+};
+
+const styles = StyleSheet.create({
+  header: {
+    padding: 16,
+    borderBottomWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: "700",
+  },
+  subtitle: {
+    fontSize: 14,
+    marginTop: 4,
+  },
+  dateContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  dateText: {
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  legendContainer: {
+    padding: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    borderRadius: 12,
+  },
+  legendTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    marginBottom: 8,
+  },
+  legendRow: {
+    flexDirection: "row",
+    gap: 16,
+  },
+  legendItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendText: {
+    fontSize: 12,
+  },
+  selectAllContainer: {
+    paddingHorizontal: 16,
+    marginTop: 12,
+  },
+  selectAllButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignSelf: "flex-start",
+  },
+  selectAllText: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  emptyContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 60,
+    paddingHorizontal: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontWeight: "600",
+    marginTop: 16,
+    textAlign: "center",
+  },
+  emptySubtext: {
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: "center",
+  },
+  slotsContainer: {
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+  slotsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  slotChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 10,
+    minWidth: 100,
+  },
+  slotChipContent: {
+    flex: 1,
+  },
+  slotTime: {
+    fontSize: 13,
+  },
+  slotPrice: {
+    fontSize: 11,
+    marginTop: 2,
+  },
+  checkIcon: {
+    marginLeft: 4,
+  },
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    borderTopWidth: 1,
+  },
+  summaryContainer: {
+    marginBottom: 12,
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 4,
+  },
+  summaryLabel: {
+    fontSize: 14,
+  },
+  summaryValue: {
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  totalAmount: {
+    fontSize: 18,
+    fontWeight: "700",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    gap: 12,
+  },
+  footerBtn: {
+    flex: 1,
+  },
+});
+
+export default ManualBookingModal;

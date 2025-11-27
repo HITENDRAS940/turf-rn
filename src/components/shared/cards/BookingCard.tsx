@@ -77,6 +77,12 @@ const BookingCard: React.FC<BookingCardProps> = ({
   };
 
   if (variant === 'admin') {
+    // Check if this is an admin manual booking (user is null or has null fields)
+    const isAdminBooking = !booking.user || !booking.user.name || !booking.user.phone;
+    const displayName = isAdminBooking ? 'Admin Booking' : (booking.user?.name || 'Unknown User');
+    const displayPhone = isAdminBooking ? 'Walk-in Customer' : (booking.user?.phone || 'N/A');
+    const avatarLetter = isAdminBooking ? 'A' : (booking.user?.name?.charAt(0)?.toUpperCase() || 'U');
+
     return (
       <TouchableOpacity
         style={[styles.card, { backgroundColor: theme.colors.card }]}
@@ -85,21 +91,35 @@ const BookingCard: React.FC<BookingCardProps> = ({
         activeOpacity={onPress ? 0.7 : 1}
       >
         {/* Admin View - User Info Header */}
-        {showUserInfo && booking.user && (
+        {showUserInfo && (
           <View style={styles.adminHeader}>
-            <View style={[styles.avatar, { backgroundColor: theme.colors.primary + '20' }]}>
-              <Text style={[styles.avatarText, { color: theme.colors.primary }]}>
-                {booking.user.name?.charAt(0)?.toUpperCase() || 'U'}
+            <View style={[
+              styles.avatar, 
+              { backgroundColor: isAdminBooking ? '#F59E0B20' : theme.colors.primary + '20' }
+            ]}>
+              <Text style={[
+                styles.avatarText, 
+                { color: isAdminBooking ? '#F59E0B' : theme.colors.primary }
+              ]}>
+                {avatarLetter}
               </Text>
             </View>
             <View style={styles.userInfo}>
-              <Text style={[styles.userName, { color: theme.colors.text }]}>
-                {booking.user.name || 'Unknown User'}
-              </Text>
+              <View style={styles.userNameRow}>
+                <Text style={[styles.userName, { color: theme.colors.text }]}>
+                  {displayName}
+                </Text>
+                {isAdminBooking && (
+                  <View style={[styles.adminBadge, { backgroundColor: '#F59E0B20' }]}>
+                    <Ionicons name="person-circle" size={12} color="#F59E0B" />
+                    <Text style={styles.adminBadgeText}>Manual</Text>
+                  </View>
+                )}
+              </View>
               <View style={styles.phoneRow}>
                 <Ionicons name="call-outline" size={12} color={theme.colors.textSecondary} />
                 <Text style={[styles.phoneText, { color: theme.colors.textSecondary }]}>
-                  {booking.user.phone || 'N/A'}
+                  {displayPhone}
                 </Text>
               </View>
             </View>
@@ -317,10 +337,28 @@ const styles = StyleSheet.create({
   userInfo: {
     flex: 1,
   },
+  userNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 2,
+  },
   userName: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 2,
+  },
+  adminBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  adminBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#F59E0B',
   },
   phoneRow: {
     flexDirection: 'row',

@@ -1,12 +1,9 @@
 /**
- * SlotsManagementModal Component
- * Reusable modal for managing turf slot configurations
- * - 24-hour slot enable/disable
- * - Individual or bulk pricing
- * - Real-time slot loading from database
+ * SlotsManagementModal – Fullscreen iOS-Friendly Version
+ * Super stable layout with fixed footer + full scrollable content
  */
 
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
@@ -17,15 +14,20 @@ import {
   TextInput,
   Switch,
   ActivityIndicator,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../../contexts/ThemeContext';
-import Button from '../Button';
-import { SlotConfig } from '../../../types';
-import { validatePrice } from '../../../utils/validationUtils';
-import { sortSlotConfigsByTime } from '../../../utils/slotUtils';
+  Platform,
+  KeyboardAvoidingView,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 
-interface SlotsManagementModalProps {
+import { useTheme } from "../../../contexts/ThemeContext";
+import Button from "../Button";
+import { SlotConfig } from "../../../types";
+import { validatePrice } from "../../../utils/validationUtils";
+import { sortSlotConfigsByTime } from "../../../utils/slotUtils";
+
+interface Props {
   visible: boolean;
   onClose: () => void;
   onSave: (slots: SlotConfig[]) => void;
@@ -37,24 +39,33 @@ interface SlotsManagementModalProps {
   turfName?: string;
 }
 
-const SlotsManagementModal: React.FC<SlotsManagementModalProps> = ({
+const SlotsManagementModal: React.FC<Props> = ({
   visible,
   onClose,
   onSave,
   onSkip,
   slots: initialSlots,
   loading = false,
-  showRefresh = false,
+  showRefresh,
   onRefresh,
   turfName,
 }) => {
   const { theme } = useTheme();
+
   const [slots, setSlots] = React.useState<SlotConfig[]>(initialSlots);
   const [samePriceForAll, setSamePriceForAll] = React.useState(false);
-  const [masterPrice, setMasterPrice] = React.useState('');
-  const [priceError, setPriceError] = React.useState('');
+  const [masterPrice, setMasterPrice] = React.useState("");
+  const [priceError, setPriceError] = React.useState("");
+  const [isClosing, setIsClosing] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
 
-  // Update slots when initialSlots change
+  // Reset isClosing when modal opens
+  React.useEffect(() => {
+    if (visible) {
+      setIsClosing(false);
+    }
+  }, [visible]);
+
   React.useEffect(() => {
     setSlots(sortSlotConfigsByTime([...initialSlots]));
   }, [initialSlots]);
@@ -62,11 +73,10 @@ const SlotsManagementModal: React.FC<SlotsManagementModalProps> = ({
   const handleSamePriceToggle = (value: boolean) => {
     setSamePriceForAll(value);
     if (value && masterPrice) {
-      // Apply master price to all enabled slots
       const price = parseFloat(masterPrice);
       if (!isNaN(price)) {
-        setSlots(prev =>
-          prev.map(slot => ({
+        setSlots((prev) =>
+          prev.map((slot) => ({
             ...slot,
             price: slot.enabled ? price : slot.price,
           }))
@@ -77,19 +87,18 @@ const SlotsManagementModal: React.FC<SlotsManagementModalProps> = ({
 
   const handleMasterPriceChange = (text: string) => {
     setMasterPrice(text);
-    setPriceError('');
+    setPriceError("");
 
     const validation = validatePrice(text);
-    if (!validation.isValid && text !== '') {
-      setPriceError(validation.error || 'Invalid price');
+    if (!validation.isValid && text !== "") {
+      setPriceError(validation.error || "Invalid price");
       return;
     }
 
-    // Apply to all enabled slots
     const price = parseFloat(text);
     if (!isNaN(price) && price > 0) {
-      setSlots(prev =>
-        prev.map(slot => ({
+      setSlots((prev) =>
+        prev.map((slot) => ({
           ...slot,
           price: slot.enabled ? price : slot.price,
         }))
@@ -98,8 +107,8 @@ const SlotsManagementModal: React.FC<SlotsManagementModalProps> = ({
   };
 
   const toggleSlotEnabled = (slotId: number) => {
-    setSlots(prev =>
-      prev.map(slot =>
+    setSlots((prev) =>
+      prev.map((slot) =>
         slot.slotId === slotId
           ? { ...slot, enabled: !slot.enabled }
           : slot
@@ -109,171 +118,178 @@ const SlotsManagementModal: React.FC<SlotsManagementModalProps> = ({
 
   const updateSlotPrice = (slotId: number, priceText: string) => {
     const price = parseFloat(priceText);
-    if (isNaN(price) && priceText !== '') return;
+    if (isNaN(price) && priceText !== "") return;
 
-    setSlots(prev =>
-      prev.map(slot =>
+    setSlots((prev) =>
+      prev.map((slot) =>
         slot.slotId === slotId
-          ? { ...slot, price: priceText === '' ? 0 : price }
+          ? { ...slot, price: priceText === "" ? 0 : price }
           : slot
       )
     );
   };
 
-  const validateSlots = (): boolean => {
-    const enabledSlots = slots.filter(s => s.enabled);
-    
+  const validateSlots = () => {
+    const enabledSlots = slots.filter((s) => s.enabled);
+
     if (enabledSlots.length === 0) {
-      setPriceError('At least one slot must be enabled');
+      setPriceError("At least one slot must be enabled");
       return false;
     }
 
-    // Check if all enabled slots have valid prices
-    const invalidPrices = enabledSlots.filter(s => !s.price || s.price <= 0);
-    if (invalidPrices.length > 0) {
-      setPriceError('All enabled slots must have a valid price');
+    if (enabledSlots.some((s) => !s.price || s.price <= 0)) {
+      setPriceError("All enabled slots must have a valid price");
       return false;
     }
 
     return true;
   };
 
-  const handleSave = () => {
-    if (validateSlots()) {
-      onSave(slots);
-    }
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 300);
   };
 
-  const getEnabledCount = () => slots.filter(s => s.enabled).length;
-  const getDisabledCount = () => slots.filter(s => !s.enabled).length;
+  const handleSave = () => {
+    if (!validateSlots()) return;
+
+    const enabledSlots = slots.filter((s) => s.enabled);
+    
+    // Show confirmation alert before saving
+    Alert.alert(
+      'Confirm Changes',
+      `You are about to save ${enabledSlots.length} enabled slot(s). Do you want to continue?`,
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Save',
+          onPress: async () => {
+            setIsSaving(true);
+            try {
+              await onSave(slots);
+              
+              // Show success alert and close modal after user acknowledges
+              Alert.alert(
+                'Success',
+                'Slot configurations saved successfully',
+                [
+                  {
+                    text: 'OK',
+                    onPress: () => {
+                      // Trigger smooth close animation
+                      setIsClosing(true);
+                      setTimeout(() => {
+                        onClose();
+                      }, 300);
+                    },
+                  },
+                ]
+              );
+            } catch (error: any) {
+              Alert.alert(
+                'Error',
+                error.response?.data?.message || 'Failed to save slot configurations. Please try again.',
+                [{ text: 'OK' }]
+              );
+            } finally {
+              setIsSaving(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   return (
-    <Modal
-      animationType="fade"
-      transparent={true}
-      visible={visible}
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
-          {/* Header */}
-          <View style={[styles.modalHeader, { borderBottomColor: theme.colors.border }]}>
-            <View style={styles.titleContainer}>
-              <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-                Slot Management
-              </Text>
-              {turfName && (
-                <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-                  {turfName}
+    <Modal visible={visible && !isClosing} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 50 : 0}
+        >
+          <View style={{ flex: 1 }}>
+            {/* Header */}
+            <View
+              style={[
+                styles.header,
+                { borderBottomColor: theme.colors.border, backgroundColor: theme.colors.card },
+              ]}
+            >
+              <View>
+                <Text style={[styles.title, { color: theme.colors.text }]}>
+                  Slot Management
                 </Text>
-              )}
-            </View>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
-
-          {/* Loading Indicator */}
-          {loading && (
-            <View style={[styles.loadingContainer, { backgroundColor: theme.colors.card }]}>
-              <ActivityIndicator size="small" color={theme.colors.primary} />
-              <Text style={[styles.loadingText, { color: theme.colors.textSecondary }]}>
-                Loading slot configurations...
-              </Text>
-            </View>
-          )}
-
-          {/* Info Banner */}
-          {!loading && slots.length > 0 && (
-            <View style={[styles.infoContainer, { backgroundColor: theme.colors.primary + '15' }]}>
-              <View style={styles.infoRow}>
-                <View style={styles.infoTextContainer}>
-                  <Ionicons name="information-circle" size={16} color={theme.colors.primary} />
-                  <Text style={[styles.infoText, { color: theme.colors.text }]}>
-                    {getEnabledCount()} enabled • {getDisabledCount()} disabled
+                {turfName && (
+                  <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+                    {turfName}
                   </Text>
-                </View>
-                {showRefresh && onRefresh && (
-                  <TouchableOpacity
-                    onPress={onRefresh}
-                    style={styles.refreshButton}
-                    disabled={loading}
-                  >
-                    <Ionicons
-                      name={loading ? 'refresh-outline' : 'refresh'}
-                      size={16}
-                      color={loading ? theme.colors.textSecondary : theme.colors.primary}
-                    />
-                    <Text style={[styles.refreshText, { color: theme.colors.primary }]}>
-                      Refresh
-                    </Text>
-                  </TouchableOpacity>
                 )}
               </View>
-            </View>
-          )}
 
-          {/* Bulk Price Control */}
-          <View style={[styles.priceControlContainer, { borderBottomColor: theme.colors.border }]}>
-            <View style={styles.samePriceToggle}>
-              <Text style={[styles.toggleLabel, { color: theme.colors.text }]}>
-                Same Price for All Slots
-              </Text>
-              <Switch
-                value={samePriceForAll}
-                onValueChange={handleSamePriceToggle}
-                trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-                thumbColor={samePriceForAll ? '#FFFFFF' : '#f4f3f4'}
-                disabled={loading}
-              />
+              <TouchableOpacity onPress={handleClose}>
+                <Ionicons name="close" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
             </View>
 
-            {samePriceForAll && (
-              <View style={styles.masterPriceContainer}>
-                <Text style={[styles.label, { color: theme.colors.text }]}>
-                  Master Price (₹/hour)
-                </Text>
-                <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: theme.colors.card,
-                      color: theme.colors.text,
-                      borderColor: priceError ? theme.colors.error : theme.colors.border,
-                    },
-                  ]}
-                  value={masterPrice}
-                  onChangeText={handleMasterPriceChange}
-                  placeholder="Enter price for all slots"
-                  placeholderTextColor={theme.colors.textSecondary}
-                  keyboardType="numeric"
-                  editable={!loading}
-                />
-              </View>
-            )}
+            {/* Scrollable content */}
+            <ScrollView
+              contentContainerStyle={{ paddingBottom: 200 }}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Price Controls */}
+              <View style={styles.section}>
+                <View style={styles.rowBetween}>
+                  <Text style={[styles.label, { color: theme.colors.text }]}>
+                    Same Price for All Slots
+                  </Text>
+                  <Switch
+                    value={samePriceForAll}
+                    onValueChange={handleSamePriceToggle}
+                    trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
+                    thumbColor={samePriceForAll ? "#fff" : "#ccc"}
+                    disabled={loading}
+                  />
+                </View>
 
-            {priceError && (
-              <Text style={[styles.errorText, { color: theme.colors.error }]}>
-                {priceError}
-              </Text>
-            )}
-          </View>
+                {samePriceForAll && (
+                  <View style={{ marginTop: 12 }}>
+                    <Text style={[styles.labelSmall, { color: theme.colors.text }]}>
+                      Master Price (₹/hour)
+                    </Text>
 
-          {/* Slots List */}
-          <ScrollView
-            style={styles.slotsContainer}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.slotsContent}
-          >
-            {slots.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Ionicons name="time-outline" size={48} color={theme.colors.textSecondary} />
-                <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>
-                  No slots available
-                </Text>
+                    <TextInput
+                      style={[
+                        styles.input,
+                        {
+                          backgroundColor: theme.colors.card,
+                          color: theme.colors.text,
+                          borderColor: priceError ? theme.colors.error : theme.colors.border,
+                        },
+                      ]}
+                      value={masterPrice}
+                      onChangeText={handleMasterPriceChange}
+                      placeholder="Enter price for all slots"
+                      placeholderTextColor={theme.colors.textSecondary}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                )}
+
+                {priceError && (
+                  <Text style={[styles.errorText, { color: theme.colors.error }]}>
+                    {priceError}
+                  </Text>
+                )}
               </View>
-            ) : (
-              slots.map((slot, index) => (
+
+              {/* Slot List */}
+              {slots.map((slot, index) => (
                 <View
                   key={slot.slotId}
                   style={[
@@ -284,8 +300,8 @@ const SlotsManagementModal: React.FC<SlotsManagementModalProps> = ({
                     },
                   ]}
                 >
-                  <View style={styles.slotHeader}>
-                    <View style={styles.slotInfo}>
+                  <View style={styles.rowBetween}>
+                    <View style={styles.row}>
                       <Text style={[styles.slotNumber, { color: theme.colors.textSecondary }]}>
                         #{index + 1}
                       </Text>
@@ -293,20 +309,20 @@ const SlotsManagementModal: React.FC<SlotsManagementModalProps> = ({
                         {slot.startTime.slice(0, 5)} - {slot.endTime.slice(0, 5)}
                       </Text>
                     </View>
+
                     <Switch
                       value={slot.enabled}
                       onValueChange={() => toggleSlotEnabled(slot.slotId)}
                       trackColor={{ false: theme.colors.border, true: theme.colors.primary }}
-                      thumbColor={slot.enabled ? '#FFFFFF' : '#f4f3f4'}
+                      thumbColor={slot.enabled ? "#fff" : "#ccc"}
                       disabled={loading}
                     />
                   </View>
 
                   {slot.enabled && (
-                    <View style={styles.priceInputContainer}>
-                      <Text style={[styles.priceLabel, { color: theme.colors.textSecondary }]}>
-                        Price (₹)
-                      </Text>
+                    <View style={styles.priceRow}>
+                      <Text style={[styles.priceLabel, { color: theme.colors.text }]}>₹</Text>
+
                       <TextInput
                         style={[
                           styles.priceInput,
@@ -316,218 +332,144 @@ const SlotsManagementModal: React.FC<SlotsManagementModalProps> = ({
                             borderColor: theme.colors.border,
                           },
                         ]}
-                        value={slot.price?.toString() || ''}
+                        value={slot.price?.toString() || ""}
                         onChangeText={(text) => updateSlotPrice(slot.slotId, text)}
+                        keyboardType="numeric"
+                        editable={!samePriceForAll}
                         placeholder="Price"
                         placeholderTextColor={theme.colors.textSecondary}
-                        keyboardType="numeric"
-                        editable={!samePriceForAll && !loading}
                       />
                     </View>
                   )}
                 </View>
-              ))
-            )}
-          </ScrollView>
+              ))}
+            </ScrollView>
 
-          {/* Actions */}
-          <View style={[styles.modalActions, { borderTopColor: theme.colors.border }]}>
-            <Button
-              title="Cancel"
-              onPress={onClose}
-              variant="outline"
-              style={styles.actionButton}
-              disabled={loading}
-            />
-            {onSkip && (
+            {/* BOTTOM ACTION BAR */}
+            <View
+              style={[
+                styles.footer,
+                { backgroundColor: theme.colors.card, borderTopColor: theme.colors.border },
+              ]}
+            >
               <Button
-                title="Skip"
-                onPress={onSkip}
+                title="Cancel"
+                onPress={handleClose}
                 variant="outline"
-                style={styles.actionButton}
-                disabled={loading}
+                style={styles.footerBtn}
+                disabled={isSaving}
               />
-            )}
-            <Button
-              title={loading ? 'Saving...' : 'Save & Continue'}
-              onPress={handleSave}
-              style={styles.actionButton}
-              disabled={loading}
-            />
+
+              {onSkip && (
+                <Button
+                  title="Skip"
+                  onPress={onSkip}
+                  variant="outline"
+                  style={styles.footerBtn}
+                  disabled={isSaving}
+                />
+              )}
+
+              <Button
+                title={loading || isSaving ? "Saving..." : "Save & Continue"}
+                onPress={handleSave}
+                loading={loading || isSaving}
+                style={styles.footerBtn}
+                disabled={isSaving}
+              />
+            </View>
           </View>
-        </View>
-      </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: 600,
-    maxHeight: '90%',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    padding: 20,
-    borderBottomWidth: 1,
-  },
-  titleContainer: {
-    flex: 1,
-    marginRight: 12,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
-  subtitle: {
-    fontSize: 14,
-    marginTop: 4,
-  },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    gap: 12,
-  },
-  loadingText: {
-    fontSize: 14,
-  },
-  infoContainer: {
-    padding: 12,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  infoTextContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  infoText: {
-    fontSize: 13,
-  },
-  refreshButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    padding: 4,
-  },
-  refreshText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  priceControlContainer: {
+  header: {
     padding: 16,
     borderBottomWidth: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
-  samePriceToggle: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+
+  title: { fontSize: 20, fontWeight: "700" },
+  subtitle: { fontSize: 14, marginTop: 4 },
+
+  section: { padding: 16, borderBottomWidth: 1 },
+
+  rowBetween: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  toggleLabel: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  masterPriceContainer: {
-    marginTop: 12,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
+
+  row: { flexDirection: "row", alignItems: "center", gap: 8 },
+
+  label: { fontSize: 16, fontWeight: "600" },
+  labelSmall: { fontSize: 14, fontWeight: "600" },
+
   input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
     paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
     fontSize: 14,
   },
-  errorText: {
-    fontSize: 12,
+
+  errorText: { marginTop: 8, fontSize: 12 },
+
+  infoText: { fontSize: 13, fontWeight: "600" },
+
+  refreshButton: {
     marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
   },
-  slotsContainer: {
-    flex: 1,
-  },
-  slotsContent: {
-    padding: 16,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
-  emptyText: {
-    fontSize: 14,
-    marginTop: 12,
-  },
+  refreshText: { fontSize: 12, fontWeight: "600" },
+
   slotCard: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    padding: 14,
     borderWidth: 1,
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 12,
   },
-  slotHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  slotInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  slotNumber: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  slotTime: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  priceInputContainer: {
+
+  slotNumber: { fontSize: 12, fontWeight: "600" },
+  slotTime: { fontSize: 16, fontWeight: "600" },
+
+  priceRow: {
     marginTop: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
-  priceLabel: {
-    fontSize: 13,
-    width: 60,
-  },
+
+  priceLabel: { fontSize: 14 },
+
   priceInput: {
     flex: 1,
     borderWidth: 1,
     borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
     fontSize: 14,
   },
-  modalActions: {
-    flexDirection: 'row',
+
+  footer: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
     gap: 12,
-    padding: 20,
+    padding: 16,
     borderTopWidth: 1,
   },
-  actionButton: {
-    flex: 1,
-  },
+
+  footerBtn: { flex: 1 },
 });
 
 export default SlotsManagementModal;

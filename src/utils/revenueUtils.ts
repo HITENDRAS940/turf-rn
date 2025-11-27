@@ -45,7 +45,8 @@ export interface RevenueData {
  */
 export const calculateTotalRevenue = (bookings: TurfBooking[]): number => {
   return bookings.reduce((total, booking) => {
-    if (booking.status === 'confirmed' || booking.status === 'completed') {
+    const status = booking.status?.toUpperCase();
+    if (status === 'CONFIRMED' || status === 'COMPLETED') {
       return total + booking.amount;
     }
     return total;
@@ -56,9 +57,10 @@ export const calculateTotalRevenue = (bookings: TurfBooking[]): number => {
  * Count total confirmed bookings
  */
 export const countConfirmedBookings = (bookings: TurfBooking[]): number => {
-  return bookings.filter(
-    booking => booking.status === 'confirmed' || booking.status === 'completed'
-  ).length;
+  return bookings.filter(booking => {
+    const status = booking.status?.toUpperCase();
+    return status === 'CONFIRMED' || status === 'COMPLETED';
+  }).length;
 };
 
 /**
@@ -101,10 +103,11 @@ export const calculateRevenueByDateRange = (
   return bookings
     .filter(booking => {
       const bookingDate = new Date(booking.bookingDate);
+      const status = booking.status?.toUpperCase();
       return (
         bookingDate >= startDate &&
         bookingDate <= endDate &&
-        (booking.status === 'confirmed' || booking.status === 'completed')
+        (status === 'CONFIRMED' || status === 'COMPLETED')
       );
     })
     .reduce((total, booking) => total + booking.amount, 0);
@@ -121,10 +124,11 @@ export const calculateMonthlyRevenue = (
   return bookings
     .filter(booking => {
       const bookingDate = new Date(booking.bookingDate);
+      const status = booking.status?.toUpperCase();
       return (
         bookingDate.getFullYear() === year &&
         bookingDate.getMonth() === month &&
-        (booking.status === 'confirmed' || booking.status === 'completed')
+        (status === 'CONFIRMED' || status === 'COMPLETED')
       );
     })
     .reduce((total, booking) => total + booking.amount, 0);
@@ -140,10 +144,10 @@ export const calculateRevenueByTurf = (
   // Note: This assumes bookings have a turfId field
   // If not available, we might need to filter by turfName
   return bookings
-    .filter(
-      booking =>
-        booking.status === 'confirmed' || booking.status === 'completed'
-    )
+    .filter(booking => {
+      const status = booking.status?.toUpperCase();
+      return status === 'CONFIRMED' || status === 'COMPLETED';
+    })
     .reduce((total, booking) => total + booking.amount, 0);
 };
 
@@ -151,9 +155,10 @@ export const calculateRevenueByTurf = (
  * Get average booking amount
  */
 export const getAverageBookingAmount = (bookings: TurfBooking[]): number => {
-  const confirmedBookings = bookings.filter(
-    booking => booking.status === 'confirmed' || booking.status === 'completed'
-  );
+  const confirmedBookings = bookings.filter(booking => {
+    const status = booking.status?.toUpperCase();
+    return status === 'CONFIRMED' || status === 'COMPLETED';
+  });
   
   if (confirmedBookings.length === 0) return 0;
   
@@ -169,15 +174,18 @@ export const getAverageBookingAmount = (bookings: TurfBooking[]): number => {
  * Get booking statistics
  */
 export const getBookingStatistics = (bookings: TurfBooking[]) => {
-  const confirmedBookings = bookings.filter(
-    booking => booking.status === 'confirmed' || booking.status === 'completed'
-  );
-  const cancelledBookings = bookings.filter(
-    booking => booking.status === 'cancelled'
-  );
-  const pendingBookings = bookings.filter(
-    booking => booking.status === 'pending'
-  );
+  const confirmedBookings = bookings.filter(booking => {
+    const status = booking.status?.toUpperCase();
+    return status === 'CONFIRMED' || status === 'COMPLETED';
+  });
+  const cancelledBookings = bookings.filter(booking => {
+    const status = booking.status?.toUpperCase();
+    return status === 'CANCELLED';
+  });
+  const pendingBookings = bookings.filter(booking => {
+    const status = booking.status?.toUpperCase();
+    return status === 'PENDING';
+  });
   
   return {
     total: bookings.length,

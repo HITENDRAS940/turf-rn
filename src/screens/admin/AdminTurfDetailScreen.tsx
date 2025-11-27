@@ -17,6 +17,7 @@ import TurfDetailsModal, { TurfDetailsData } from '../../components/shared/modal
 import SlotsManagementModal from '../../components/shared/modals/SlotsManagementModal';
 import AvailabilityModal from '../../components/shared/modals/AvailabilityModal';
 import ImageManagementModal from '../../components/shared/modals/ImageManagementModal';
+import ManualBookingModal from '../../components/shared/modals/ManualBookingModal';
 
 // Utilities
 import { formatDateToYYYYMMDD } from '../../utils/dateUtils';
@@ -63,7 +64,7 @@ interface RevenueData {
   availableSlots: number;
 }
 
-type ModalStep = 'none' | 'details' | 'slots' | 'availability' | 'images';
+type ModalStep = 'none' | 'details' | 'slots' | 'availability' | 'images' | 'manualBooking';
 
 const AdminTurfDetailScreen = () => {
   const navigation = useNavigation<any>();
@@ -103,9 +104,10 @@ const AdminTurfDetailScreen = () => {
     try {
       const dateStr = formatDateToYYYYMMDD(selectedDate);
       
-      // Fetch updated turf data to get latest images
+      // Fetch updated turf data to get latest images and slots
       const turfResponse = await turfAPI.getTurfById(turf.id);
-      setCurrentTurfData(turfResponse.data);
+      const latestTurfData = turfResponse.data;
+      setCurrentTurfData(latestTurfData);
       
       // Fetch bookings for this turf on the selected date
       const bookingsData = await adminAPI.getTurfBookings(turf.id, dateStr);
@@ -127,14 +129,17 @@ const AdminTurfDetailScreen = () => {
       
       setBookings(filteredBookings);
 
-      // Calculate revenue using utility
-      const revenueData = calculateRevenueData(filteredBookings, turf.slots || []);
-      setRevenue(revenueData);
+      // Use latest slots from API response (not stale route params)
+      const latestSlots = latestTurfData.slots || [];
 
-      // Map slots with booking info using utility
+      // Map slots with booking info using utility (do this FIRST)
       const bookedSlotIds = getBookedSlotIds(filteredBookings);
-      const slotsData = mapSlotsWithBookingInfo(turf.slots || [], bookedSlotIds);
+      const slotsData = mapSlotsWithBookingInfo(latestSlots, bookedSlotIds);
       setSlotsWithBookings(slotsData);
+
+      // Calculate revenue using the mapped slots (with isBooked property)
+      const revenueData = calculateRevenueData(filteredBookings, slotsData);
+      setRevenue(revenueData);
 
     } catch (error: any) {
       console.error('Error fetching turf data:', error);
@@ -256,6 +261,27 @@ const AdminTurfDetailScreen = () => {
     setCurrentStep('images');
   };
 
+  const handleManualBooking = () => {
+    setCurrentStep('manualBooking');
+  };
+
+  const handleManualBookingConfirm = async (slotIds: number[]) => {
+    try {
+      const dateStr = formatDateToYYYYMMDD(selectedDate);
+      
+      await adminAPI.createManualBooking({
+        turfId: turf.id,
+        slotIds: slotIds,
+        bookingDate: dateStr,
+      });
+      
+      // Refresh data to show new booking
+      fetchTurfData();
+    } catch (error: any) {
+      throw error; // Re-throw to let modal handle the error
+    }
+  };
+
   // Modal Callbacks
   const handleTurfDetailsSave = async (details: TurfDetailsData) => {
     try {
@@ -297,19 +323,10 @@ const AdminTurfDetailScreen = () => {
         }
       }
       
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: 'Slot configurations saved successfully',
-      });
-      
+      // Refresh turf data to reflect latest DB state
       fetchTurfData();
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to save slot configurations',
-      });
+      throw error; // Re-throw to let modal handle the error
     }
   };
 
@@ -321,19 +338,9 @@ const AdminTurfDetailScreen = () => {
         await adminAPI.setTurfNotAvailable(turf.id);
       }
 
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: `Turf set as ${isAvailable ? 'available' : 'not available'} successfully`,
-      });
-
       fetchTurfData();
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to set turf availability',
-      });
+      throw error; // Re-throw to let modal handle the error
     }
   };
 
@@ -476,6 +483,14 @@ const AdminTurfDetailScreen = () => {
         </TouchableOpacity>
 
         <TouchableOpacity 
+          style={[styles.actionButtonItem, { borderRightColor: theme.colors.border }]}
+          onPress={handleManualBooking}
+        >
+          <Ionicons name="add-circle" size={20} color={theme.colors.success || '#10B981'} />
+          <Text style={[styles.actionButtonText, { color: theme.colors.success || '#10B981' }]}>Book</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity 
           style={styles.actionButtonItem}
           onPress={handleDeleteTurf}
         >
@@ -586,6 +601,7 @@ const AdminTurfDetailScreen = () => {
         onSave={handleAvailabilitySave}
         currentAvailability={turf.isAvailable || false}
         turfName={turf.name}
+        turfId={turf.id}
       />
 
       <ImageManagementModal
@@ -597,6 +613,15 @@ const AdminTurfDetailScreen = () => {
         uploading={imageUploading}
         deleting={imageDeleting}
         turfName={currentTurfData.name}
+      />
+
+      <ManualBookingModal
+        visible={currentStep === 'manualBooking'}
+        onClose={closeModal}
+        onConfirm={handleManualBookingConfirm}
+        slots={slotsWithBookings}
+        turfName={turf.name}
+        selectedDate={formatDateToYYYYMMDD(selectedDate)}
       />
     </SafeAreaView>
   );
