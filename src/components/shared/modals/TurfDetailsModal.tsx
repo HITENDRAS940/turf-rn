@@ -1,9 +1,8 @@
 /**
- * TurfDetailsModal Component
- * Reusable modal for editing turf details (name, location, price, amenities, description)
+ * TurfDetailsModal – Clean Final Version (with reusable FormField)
  */
 
-import React from 'react';
+import React from "react";
 import {
   View,
   Text,
@@ -11,12 +10,31 @@ import {
   Modal,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../../contexts/ThemeContext';
-import Button from '../Button';
-import { validateTurfName, validateLocation, validatePrice, validateDescription, validateAmenities } from '../../../utils/validationUtils';
+  KeyboardAvoidingView,
+  Platform,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../../contexts/ThemeContext";
+
+import Button from "../Button";
+import FormField from "../FormField";
+
+import {
+  validateTurfName,
+  validateLocation,
+  validatePrice,
+  validateDescription,
+  validateAmenities,
+} from "../../../utils/validationUtils";
+
+export interface TurfDetailsData {
+  name: string;
+  location: string;
+  price: string;
+  amenities: string;
+  description: string;
+}
 
 interface TurfDetailsModalProps {
   visible: boolean;
@@ -26,14 +44,6 @@ interface TurfDetailsModalProps {
   initialData: TurfDetailsData;
   loading?: boolean;
   showSkipButton?: boolean;
-}
-
-export interface TurfDetailsData {
-  name: string;
-  location: string;
-  price: string;
-  amenities: string;
-  description: string;
 }
 
 const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
@@ -46,342 +56,272 @@ const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
   showSkipButton = false,
 }) => {
   const { theme } = useTheme();
-  const [formData, setFormData] = React.useState<TurfDetailsData>(initialData);
-  const [errors, setErrors] = React.useState<Partial<Record<keyof TurfDetailsData, string>>>({});
 
-  // Update form data when initialData changes
+  const [formData, setFormData] = React.useState<TurfDetailsData>(initialData);
+  const [errors, setErrors] = React.useState<
+    Partial<Record<keyof TurfDetailsData, string>>
+  >({});
+  const [isClosing, setIsClosing] = React.useState(false);
+
   React.useEffect(() => {
     setFormData(initialData);
   }, [initialData]);
 
+  // Reset closing state when modal becomes visible
+  React.useEffect(() => {
+    if (visible) {
+      setIsClosing(false);
+    }
+  }, [visible]);
+
   const handleChange = (field: keyof TurfDetailsData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error for this field
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[field];
+        return updated;
       });
     }
   };
 
-  const validateForm = (): boolean => {
+  const validateForm = () => {
     const newErrors: Partial<Record<keyof TurfDetailsData, string>> = {};
 
-    const nameValidation = validateTurfName(formData.name);
-    if (!nameValidation.isValid) {
-      newErrors.name = nameValidation.error;
-    }
+    const validations = {
+      name: validateTurfName(formData.name),
+      location: validateLocation(formData.location),
+      price: validatePrice(formData.price),
+      amenities: validateAmenities(formData.amenities),
+      description: validateDescription(formData.description),
+    };
 
-    const locationValidation = validateLocation(formData.location);
-    if (!locationValidation.isValid) {
-      newErrors.location = locationValidation.error;
-    }
-
-    const priceValidation = validatePrice(formData.price);
-    if (!priceValidation.isValid) {
-      newErrors.price = priceValidation.error;
-    }
-
-    const amenitiesValidation = validateAmenities(formData.amenities);
-    if (!amenitiesValidation.isValid) {
-      newErrors.amenities = amenitiesValidation.error;
-    }
-
-    const descriptionValidation = validateDescription(formData.description);
-    if (!descriptionValidation.isValid) {
-      newErrors.description = descriptionValidation.error;
+    for (const key in validations) {
+      const result = validations[key as keyof TurfDetailsData];
+      if (!result.isValid) newErrors[key as keyof TurfDetailsData] = result.error;
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (validateForm()) {
-      onSave(formData);
+      await onSave(formData);
+      // Trigger smooth close animation
+      setIsClosing(true);
+      setTimeout(() => {
+        onClose();
+      }, 300);
     }
   };
 
+  const handleClose = () => {
+    setIsClosing(true);
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
+
+  const handleSkipToSlots = () => {
+    if (onSkipToSlots) {
+      setIsClosing(true);
+      setTimeout(() => {
+        onSkipToSlots();
+      }, 300);
+    }
+  };
+
+  // -------------------------------
+  // HEADER
+  // -------------------------------
+  const renderHeader = () => (
+    <View
+      style={[
+        styles.header,
+        {
+          backgroundColor: theme.colors.card,
+          borderBottomColor: theme.colors.border || "rgba(0,0,0,0.15)",
+        },
+      ]}
+    >
+      <TouchableOpacity
+        onPress={handleClose}
+        style={[styles.closeButton, { backgroundColor: theme.colors.background }]}
+      >
+        <Ionicons name="close" size={24} color={theme.colors.text} />
+      </TouchableOpacity>
+
+      <View style={{ marginLeft: 16 }}>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Edit Turf Details</Text>
+
+        {showSkipButton && (
+          <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+            Skip to Slots if no changes needed
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+
+  // -------------------------------
+  // FORM FIELDS
+  // -------------------------------
+  const renderForm = () => (
+    <View>
+      <FormField
+        label="Turf Name"
+        icon="business-outline"
+        required
+        value={formData.name}
+        error={errors.name}
+        placeholder="Enter turf name"
+        onChange={(v) => handleChange("name", v)}
+      />
+
+      <FormField
+        label="Location"
+        icon="location-outline"
+        required
+        value={formData.location}
+        error={errors.location}
+        placeholder="Enter location"
+        onChange={(v) => handleChange("location", v)}
+      />
+
+      <FormField
+        label="Base Price (₹/hour)"
+        icon="pricetag-outline"
+        required
+        keyboardType="numeric"
+        value={formData.price}
+        error={errors.price}
+        placeholder="Enter base price"
+        onChange={(v) => handleChange("price", v)}
+      />
+
+      <FormField
+        label="Amenities (comma-separated)"
+        icon="list-outline"
+        multiline
+        value={formData.amenities}
+        error={errors.amenities}
+        placeholder="Parking, Washroom, Changing Room"
+        onChange={(v) => handleChange("amenities", v)}
+      />
+
+      <FormField
+        label="Description"
+        icon="document-text-outline"
+        multiline
+        large
+        value={formData.description}
+        error={errors.description}
+        placeholder="Enter turf description"
+        onChange={(v) => handleChange("description", v)}
+      />
+    </View>
+  );
+
+  // -------------------------------
+  // MAIN MODAL LAYOUT
+  // -------------------------------
   return (
     <Modal
-      animationType="fade"
-      transparent={true}
-      visible={visible}
-      onRequestClose={onClose}
+      visible={visible && !isClosing}
+      animationType="slide"
+      presentationStyle="pageSheet"
+      onRequestClose={handleClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={[styles.modalContent, { backgroundColor: theme.colors.background }]}>
-          {/* Header */}
-          <View style={styles.modalHeader}>
-            <View style={styles.titleContainer}>
-              <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
-                Edit Turf Details
-              </Text>
-              {showSkipButton && (
-                <Text style={[styles.editModeHint, { color: theme.colors.textSecondary }]}>
-                  💡 Tip: Use "Skip to Slots" to avoid API costs if no changes needed
-                </Text>
-              )}
-            </View>
-            <TouchableOpacity onPress={onClose}>
-              <Ionicons name="close" size={24} color={theme.colors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 60 : 0}
+        >
+          <View style={{ flex: 1 }}>
+            {renderHeader()}
 
-          {/* Form */}
-          <ScrollView
-            style={styles.form}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.formContent}
-          >
-            {/* Turf Name */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.text }]}>
-                Turf Name <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.colors.card,
-                    color: theme.colors.text,
-                    borderColor: errors.name ? theme.colors.error : theme.colors.border,
-                  },
-                ]}
-                placeholder="Enter turf name"
-                placeholderTextColor={theme.colors.textSecondary}
-                value={formData.name}
-                onChangeText={(value) => handleChange('name', value)}
-                editable={!loading}
-              />
-              {errors.name && (
-                <Text style={[styles.errorText, { color: theme.colors.error }]}>
-                  {errors.name}
-                </Text>
-              )}
-            </View>
+            <ScrollView
+              contentContainerStyle={{
+                padding: 20,
+                paddingBottom: 200,
+              }}
+              showsVerticalScrollIndicator={false}
+              keyboardShouldPersistTaps="handled"
+            >
+              {renderForm()}
+            </ScrollView>
 
-            {/* Location */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.text }]}>
-                Location <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.colors.card,
-                    color: theme.colors.text,
-                    borderColor: errors.location ? theme.colors.error : theme.colors.border,
-                  },
-                ]}
-                placeholder="Enter location"
-                placeholderTextColor={theme.colors.textSecondary}
-                value={formData.location}
-                onChangeText={(value) => handleChange('location', value)}
-                editable={!loading}
-              />
-              {errors.location && (
-                <Text style={[styles.errorText, { color: theme.colors.error }]}>
-                  {errors.location}
-                </Text>
+            {/* Fixed Action Bar */}
+            <View
+              style={[
+                styles.bottomBar,
+                {
+                  backgroundColor: theme.colors.card,
+                  borderTopColor: theme.colors.border,
+                },
+              ]}
+            >
+              {showSkipButton && onSkipToSlots && (
+                <Button
+                  title="Skip to Slots"
+                  variant="outline"
+                  style={{ marginBottom: 10 }}
+                  onPress={handleSkipToSlots}
+                  disabled={loading}
+                />
               )}
-            </View>
 
-            {/* Base Price */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.text }]}>
-                Base Price (₹/hour) <Text style={styles.required}>*</Text>
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: theme.colors.card,
-                    color: theme.colors.text,
-                    borderColor: errors.price ? theme.colors.error : theme.colors.border,
-                  },
-                ]}
-                placeholder="Enter base price"
-                placeholderTextColor={theme.colors.textSecondary}
-                value={formData.price}
-                onChangeText={(value) => handleChange('price', value)}
-                keyboardType="numeric"
-                editable={!loading}
-              />
-              {errors.price && (
-                <Text style={[styles.errorText, { color: theme.colors.error }]}>
-                  {errors.price}
-                </Text>
-              )}
-            </View>
-
-            {/* Amenities */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.text }]}>
-                Amenities (comma-separated)
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.textArea,
-                  {
-                    backgroundColor: theme.colors.card,
-                    color: theme.colors.text,
-                    borderColor: errors.amenities ? theme.colors.error : theme.colors.border,
-                  },
-                ]}
-                placeholder="e.g., Parking, Washroom, Changing Room"
-                placeholderTextColor={theme.colors.textSecondary}
-                value={formData.amenities}
-                onChangeText={(value) => handleChange('amenities', value)}
-                multiline
-                numberOfLines={2}
-                editable={!loading}
-              />
-              {errors.amenities && (
-                <Text style={[styles.errorText, { color: theme.colors.error }]}>
-                  {errors.amenities}
-                </Text>
-              )}
-            </View>
-
-            {/* Description */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, { color: theme.colors.text }]}>
-                Description
-              </Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  styles.textArea,
-                  {
-                    backgroundColor: theme.colors.card,
-                    color: theme.colors.text,
-                    borderColor: errors.description ? theme.colors.error : theme.colors.border,
-                  },
-                ]}
-                placeholder="Enter turf description"
-                placeholderTextColor={theme.colors.textSecondary}
-                value={formData.description}
-                onChangeText={(value) => handleChange('description', value)}
-                multiline
-                numberOfLines={4}
-                editable={!loading}
-              />
-              {errors.description && (
-                <Text style={[styles.errorText, { color: theme.colors.error }]}>
-                  {errors.description}
-                </Text>
-              )}
-            </View>
-          </ScrollView>
-
-          {/* Actions */}
-          <View style={styles.modalActions}>
-            {showSkipButton && onSkipToSlots && (
               <Button
-                title="Skip to Slots"
-                onPress={onSkipToSlots}
-                variant="outline"
-                style={styles.actionButton}
+                title={loading ? "Saving..." : "Save & Continue"}
+                onPress={handleSave}
+                loading={loading}
                 disabled={loading}
               />
-            )}
-            <Button
-              title={loading ? 'Saving...' : 'Save & Continue'}
-              onPress={handleSave}
-              style={styles.actionButton}
-              disabled={loading}
-            />
+            </View>
           </View>
-        </View>
-      </View>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
     </Modal>
   );
 };
 
+// ----------------------------------
+// STYLES
+// ----------------------------------
 const styles = StyleSheet.create({
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: 500,
-    maxHeight: '90%',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    padding: 20,
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0, 0, 0, 0.05)',
   },
-  titleContainer: {
-    flex: 1,
-    marginRight: 12,
+  closeButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
-  modalTitle: {
+  title: {
     fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 4,
+    fontWeight: "700",
   },
-  editModeHint: {
-    fontSize: 12,
-    fontStyle: 'italic',
+  subtitle: {
+    fontSize: 13,
     marginTop: 4,
   },
-  form: {
-    flex: 1,
-  },
-  formContent: {
-    padding: 20,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  required: {
-    color: '#EF4444',
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 14,
-  },
-  textArea: {
-    minHeight: 60,
-    textAlignVertical: 'top',
-    paddingTop: 10,
-  },
-  errorText: {
-    fontSize: 12,
-    marginTop: 4,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    gap: 12,
-    padding: 20,
+
+  bottomBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(0, 0, 0, 0.05)',
-  },
-  actionButton: {
-    flex: 1,
   },
 });
 
