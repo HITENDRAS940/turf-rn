@@ -8,13 +8,12 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { bookingAPI } from '../../services/api';
 import { Booking } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import BookingCard from '../../components/user/BookingCard';
 import EmptyState from '../../components/shared/EmptyState';
-import Toast from 'react-native-toast-message';
 
 const MyBookingsScreen = ({ navigation, route }: any) => {
   const { theme } = useTheme();
@@ -54,14 +53,9 @@ const MyBookingsScreen = ({ navigation, route }: any) => {
       
       setBookings(sortedBookings);
       
-      // Show success toast if coming from successful booking
+      // Show success alert if coming from successful booking
       if (showSuccess && newBooking) {
-        Toast.show({
-          type: 'success',
-          text1: 'Booking Successful! 🎉',
-          text2: `Reference: ${newBooking.reference}`,
-          visibilityTime: 4000,
-        });
+        Alert.alert('Booking Successful! 🎉', `Reference: ${newBooking.reference}`);
       }
       
     } catch (error: any) {
@@ -70,11 +64,7 @@ const MyBookingsScreen = ({ navigation, route }: any) => {
                           error.response?.data?.error || 
                           'Failed to fetch bookings';
       
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMessage,
-      });
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -89,11 +79,7 @@ const MyBookingsScreen = ({ navigation, route }: any) => {
   const handleBookingPress = (booking: Booking) => {
     // Navigate to booking details screen (implement if needed)
     console.log('📱 Booking pressed:', booking.id);
-    Toast.show({
-      type: 'info',
-      text1: 'Booking Details',
-      text2: `Booking #${booking.id} - ${booking.turfName}`,
-    });
+    Alert.alert('Booking Details', `Booking #${booking.id} - ${booking.turfName}`);
   };
 
   const handleCancelBooking = async (booking: Booking) => {
@@ -115,13 +101,6 @@ const MyBookingsScreen = ({ navigation, route }: any) => {
     try {
       console.log('🚫 Cancelling booking:', booking.id);
       
-      Toast.show({
-        type: 'info',
-        text1: 'Cancelling Booking',
-        text2: 'Please wait...',
-        visibilityTime: 2000,
-      });
-      
       await bookingAPI.cancelBooking(booking.id);
       
       // Update the booking status locally
@@ -133,12 +112,7 @@ const MyBookingsScreen = ({ navigation, route }: any) => {
         )
       );
       
-      Toast.show({
-        type: 'success',
-        text1: 'Booking Cancelled',
-        text2: `Your booking at ${booking.turfName} has been cancelled`,
-        visibilityTime: 3000,
-      });
+      Alert.alert('Booking Cancelled', `Your booking at ${booking.turfName} has been cancelled`);
       
     } catch (error: any) {
       console.error('❌ Error cancelling booking:', error);
@@ -146,11 +120,7 @@ const MyBookingsScreen = ({ navigation, route }: any) => {
                           error.response?.data?.error || 
                           'Failed to cancel booking';
       
-      Toast.show({
-        type: 'error',
-        text1: 'Cancellation Failed',
-        text2: errorMessage,
-      });
+      Alert.alert('Cancellation Failed', errorMessage);
     }
   };
 
@@ -193,14 +163,14 @@ const MyBookingsScreen = ({ navigation, route }: any) => {
 
   if (loading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
         {renderLoadingState()}
-      </SafeAreaView>
+      </ScreenWrapper>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <FlatList
         data={bookings}
         renderItem={renderBookingCard}
@@ -220,7 +190,7 @@ const MyBookingsScreen = ({ navigation, route }: any) => {
         ListEmptyComponent={renderEmptyState}
         showsVerticalScrollIndicator={false}
       />
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

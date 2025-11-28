@@ -1,12 +1,12 @@
+
 // filepath: /Users/hitendrasingh/Desktop/EzTurf/src/screens/manager/ManagerTurfDetailScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
-import { managerAPI } from '../../services/api';
+import { managerAPI, turfAPI } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { format } from 'date-fns';
 
 // Shared Components
@@ -108,18 +108,8 @@ const ManagerTurfDetailScreen = () => {
       setSlotsWithBookings(slotsData);
 
     } catch (error: any) {
-      console.error('Error fetching turf data:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to fetch turf data',
-      });
-      
-      setBookings([]);
-      const defaultRevenue = calculateRevenueData([], turf.slots || []);
-      setRevenue(defaultRevenue);
-      const slotsData = mapSlotsWithBookingInfo(turf.slots || [], new Set());
-      setSlotsWithBookings(slotsData);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to delete images');
+      throw error;
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -169,7 +159,7 @@ const ManagerTurfDetailScreen = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]} safeAreaEdges={['top']}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: theme.colors.border || 'rgba(0,0,0,0.05)' }]}>
         <TouchableOpacity 
@@ -267,7 +257,7 @@ const ManagerTurfDetailScreen = () => {
           </View>
         </ScrollView>
       )}
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

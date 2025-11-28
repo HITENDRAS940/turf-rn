@@ -9,7 +9,7 @@
 
 import { useState, useCallback } from 'react';
 import { adminAPI } from '../services/api';
-import Toast from 'react-native-toast-message';
+import { Alert } from 'react-native';
 import { SlotConfig, SlotUpdate } from '../types';
 import { sortSlotConfigsByTime, mapDbSlotsToConfig, DEFAULT_SLOTS } from '../utils/slotUtils';
 
@@ -33,11 +33,11 @@ export const useSlotManagement = (options?: UseSlotManagementOptions) => {
     try {
       const response = await adminAPI.getTurfSlots(turfId);
       const dbSlots = response.data.slots || [];
-      
+
       // Map database slots to app format and sort
       const mappedSlots = mapDbSlotsToConfig(dbSlots);
       const sortedSlots = sortSlotConfigsByTime(mappedSlots);
-      
+
       setSlots(sortedSlots);
       setSlotsLoaded(true);
       return sortedSlots;
@@ -45,18 +45,17 @@ export const useSlotManagement = (options?: UseSlotManagementOptions) => {
       const errorMsg = err.response?.data?.message || 'Failed to fetch slots';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      
+
       // Fallback to default slots if fetch fails
       const defaultSlots = sortSlotConfigsByTime([...DEFAULT_SLOTS]);
       setSlots(defaultSlots);
       setSlotsLoaded(true);
-      
-      Toast.show({
-        type: 'info',
-        text1: 'Info',
-        text2: 'Using default slot configuration',
-      });
-      
+
+      setSlots(defaultSlots);
+      setSlotsLoaded(true);
+
+      Alert.alert('Info', 'Using default slot configuration');
+
       return defaultSlots;
     } finally {
       setLoading(false);
@@ -73,25 +72,17 @@ export const useSlotManagement = (options?: UseSlotManagementOptions) => {
       const response = await adminAPI.updateTurf(turfId, { slots: slotUpdates });
       const successMsg = 'Slot configurations updated successfully';
       options?.onSuccess?.(successMsg);
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: successMsg,
-      });
-      
+      Alert.alert('Success', successMsg);
+
       // Refresh slots after update
       await fetchSlots(turfId);
-      
+
       return response.data;
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 'Failed to update slots';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMsg,
-      });
+      Alert.alert('Error', errorMsg);
       throw err;
     } finally {
       setLoading(false);
@@ -102,9 +93,9 @@ export const useSlotManagement = (options?: UseSlotManagementOptions) => {
    * Toggle slot enabled/disabled
    */
   const toggleSlot = useCallback((slotId: number) => {
-    setSlots(prev => 
-      prev.map(slot => 
-        slot.slotId === slotId 
+    setSlots(prev =>
+      prev.map(slot =>
+        slot.slotId === slotId
           ? { ...slot, enabled: !slot.enabled }
           : slot
       )
@@ -182,7 +173,7 @@ export const useSlotManagement = (options?: UseSlotManagementOptions) => {
    */
   const validateSlots = useCallback(() => {
     const enabledSlots = slots.filter(s => s.enabled);
-    
+
     if (enabledSlots.length === 0) {
       return {
         isValid: false,
@@ -237,7 +228,7 @@ export const useSlotManagement = (options?: UseSlotManagementOptions) => {
     error,
     slots,
     slotsLoaded,
-    
+
     // Actions
     fetchSlots,
     updateSlots,
@@ -247,7 +238,7 @@ export const useSlotManagement = (options?: UseSlotManagementOptions) => {
     enableAllSlots,
     disableAllSlots,
     resetToDefaults,
-    
+
     // Helpers
     getEnabledCount,
     getDisabledCount,

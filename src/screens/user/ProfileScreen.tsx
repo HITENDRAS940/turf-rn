@@ -7,12 +7,11 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { COLORS } from '../../constants/colors';
-import Toast from 'react-native-toast-message';
 import { formatPhoneForDisplay } from '../../utils/phoneUtils';
 import ThemeSelector from '../../components/shared/ThemeSelector';
 
@@ -36,17 +35,9 @@ const ProfileScreen = ({ navigation }: any) => {
           onPress: async () => {
             try {
               await logout();
-              Toast.show({
-                type: 'success',
-                text1: 'Logged Out',
-                text2: 'You have been logged out successfully',
-              });
+              Alert.alert('Logged Out', 'You have been logged out successfully');
             } catch (error) {
-              Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: 'Failed to logout',
-              });
+              Alert.alert('Error', 'Failed to logout');
             }
           },
         },
@@ -62,19 +53,19 @@ const ProfileScreen = ({ navigation }: any) => {
           icon: 'person-outline',
           title: 'Edit Profile',
           subtitle: 'Update your personal information',
-          onPress: () => Toast.show({ type: 'info', text1: 'Coming Soon', text2: 'Profile editing feature is under development' }),
+          onPress: () => Alert.alert('Coming Soon', 'Profile editing feature is under development'),
         },
         {
           icon: 'card-outline',
           title: 'Payment Methods',
           subtitle: 'Manage your payment options',
-          onPress: () => Toast.show({ type: 'info', text1: 'Coming Soon', text2: 'Payment methods feature is under development' }),
+          onPress: () => Alert.alert('Coming Soon', 'Payment methods feature is under development'),
         },
         {
           icon: 'location-outline',
           title: 'Saved Addresses',
           subtitle: 'Manage your saved locations',
-          onPress: () => Toast.show({ type: 'info', text1: 'Coming Soon', text2: 'Saved addresses feature is under development' }),
+          onPress: () => Alert.alert('Coming Soon', 'Saved addresses feature is under development'),
         },
       ],
     },
@@ -85,7 +76,7 @@ const ProfileScreen = ({ navigation }: any) => {
           icon: 'notifications-outline',
           title: 'Notifications',
           subtitle: 'Manage notification settings',
-          onPress: () => Toast.show({ type: 'info', text1: 'Coming Soon', text2: 'Notification settings feature is under development' }),
+          onPress: () => Alert.alert('Coming Soon', 'Notification settings feature is under development'),
         },
         {
           icon: 'color-palette-outline',
@@ -103,7 +94,7 @@ const ProfileScreen = ({ navigation }: any) => {
           icon: 'language-outline',
           title: 'Language',
           subtitle: 'Choose your preferred language',
-          onPress: () => Toast.show({ type: 'info', text1: 'Coming Soon', text2: 'Language settings feature is under development' }),
+          onPress: () => Alert.alert('Coming Soon', 'Language settings feature is under development'),
         },
         {
           icon: 'moon-outline',
@@ -120,7 +111,7 @@ const ProfileScreen = ({ navigation }: any) => {
           icon: 'help-circle-outline',
           title: 'Help & Support',
           subtitle: 'Get help and contact support',
-          onPress: () => Toast.show({ type: 'info', text1: 'Coming Soon', text2: 'Help & support feature is under development' }),
+          onPress: () => Alert.alert('Coming Soon', 'Help & support feature is under development'),
         },
         {
           icon: 'bug-outline',
@@ -132,19 +123,19 @@ const ProfileScreen = ({ navigation }: any) => {
           icon: 'star-outline',
           title: 'Rate App',
           subtitle: 'Rate our app on the store',
-          onPress: () => Toast.show({ type: 'info', text1: 'Thank You!', text2: 'Rate app feature is under development' }),
+          onPress: () => Alert.alert('Thank You!', 'Rate app feature is under development'),
         },
         {
           icon: 'document-text-outline',
           title: 'Terms & Privacy',
           subtitle: 'Read our terms and privacy policy',
-          onPress: () => Toast.show({ type: 'info', text1: 'Coming Soon', text2: 'Terms & privacy feature is under development' }),
+          onPress: () => Alert.alert('Coming Soon', 'Terms & privacy feature is under development'),
         },
         {
           icon: 'information-circle-outline',
           title: 'About',
           subtitle: 'App version and information',
-          onPress: () => Toast.show({ type: 'info', text1: 'TurfBooking', text2: 'Version 1.0.0' }),
+          onPress: () => Alert.alert('TurfBooking', 'Version 1.0.0'),
         },
       ],
     },
@@ -177,7 +168,7 @@ const ProfileScreen = ({ navigation }: any) => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Profile</Text>
       </View>
@@ -218,7 +209,7 @@ const ProfileScreen = ({ navigation }: any) => {
         visible={showThemeSelector} 
         onClose={() => setShowThemeSelector(false)} 
       />
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

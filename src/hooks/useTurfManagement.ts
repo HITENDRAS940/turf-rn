@@ -9,7 +9,7 @@
 
 import { useState, useCallback } from 'react';
 import { adminAPI, turfAPI } from '../services/api';
-import Toast from 'react-native-toast-message';
+import { Alert } from 'react-native';
 import { TurfDetails, SlotConfig } from '../types';
 
 interface UseTurfManagementOptions {
@@ -42,11 +42,9 @@ export const useTurfManagement = (options?: UseTurfManagementOptions) => {
       const errorMsg = err.response?.data?.message || 'Failed to fetch turf details';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMsg,
-      });
+      setError(errorMsg);
+      options?.onError?.(errorMsg);
+      Alert.alert('Error', errorMsg);
       throw err;
     } finally {
       setLoading(false);
@@ -70,21 +68,13 @@ export const useTurfManagement = (options?: UseTurfManagementOptions) => {
       const response = await adminAPI.createTurf(turfData);
       const successMsg = 'Turf created successfully';
       options?.onSuccess?.(successMsg);
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: successMsg,
-      });
+      Alert.alert('Success', successMsg);
       return response.data;
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 'Failed to create turf';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMsg,
-      });
+      Alert.alert('Error', errorMsg);
       throw err;
     } finally {
       setLoading(false);
@@ -106,29 +96,19 @@ export const useTurfManagement = (options?: UseTurfManagementOptions) => {
     setError(null);
     try {
       const response = await adminAPI.updateTurf(turfId, turfData);
-      const successMsg = 'Turf updated successfully';
-      options?.onSuccess?.(successMsg);
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: successMsg,
-      });
-      
+      Alert.alert('Success', successMsg);
+
       // Update local state
       if (turf && turf.id === turfId) {
         setTurf({ ...turf, ...turfData });
       }
-      
+
       return response.data;
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 'Failed to update turf';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMsg,
-      });
+      Alert.alert('Error', errorMsg);
       throw err;
     } finally {
       setLoading(false);
@@ -145,12 +125,8 @@ export const useTurfManagement = (options?: UseTurfManagementOptions) => {
       await adminAPI.deleteTurf(turfId);
       const successMsg = 'Turf deleted successfully';
       options?.onSuccess?.(successMsg);
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: successMsg,
-      });
-      
+      Alert.alert('Success', successMsg);
+
       // Clear local state if deleted turf was loaded
       if (turf && turf.id === turfId) {
         setTurf(null);
@@ -159,11 +135,7 @@ export const useTurfManagement = (options?: UseTurfManagementOptions) => {
       const errorMsg = err.response?.data?.message || 'Failed to delete turf';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMsg,
-      });
+      Alert.alert('Error', errorMsg);
       throw err;
     } finally {
       setLoading(false);
@@ -183,15 +155,9 @@ export const useTurfManagement = (options?: UseTurfManagementOptions) => {
       } else {
         await adminAPI.setTurfNotAvailable(turfId);
       }
-      
-      const successMsg = `Turf ${isAvailable ? 'enabled' : 'disabled'} successfully`;
-      options?.onSuccess?.(successMsg);
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: successMsg,
-      });
-      
+
+      Alert.alert('Success', successMsg);
+
       // Update local state
       if (turf && turf.id === turfId) {
         setTurf({ ...turf, isAvailable });
@@ -200,11 +166,7 @@ export const useTurfManagement = (options?: UseTurfManagementOptions) => {
       const errorMsg = err.response?.data?.message || 'Failed to update availability';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMsg,
-      });
+      Alert.alert('Error', errorMsg);
       throw err;
     } finally {
       setLoading(false);
@@ -226,11 +188,7 @@ export const useTurfManagement = (options?: UseTurfManagementOptions) => {
       const errorMsg = err.response?.data?.message || 'Failed to fetch turfs';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMsg,
-      });
+      Alert.alert('Error', errorMsg);
       throw err;
     } finally {
       setLoading(false);
@@ -258,7 +216,7 @@ export const useTurfManagement = (options?: UseTurfManagementOptions) => {
     loading,
     error,
     turf,
-    
+
     // Actions
     fetchTurf,
     createTurf,

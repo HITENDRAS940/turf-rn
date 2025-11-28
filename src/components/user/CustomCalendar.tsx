@@ -7,7 +7,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Calendar, DateData } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import Toast from 'react-native-toast-message';
+import { Alert } from 'react-native';
 
 interface CustomCalendarProps {
   selectedDate: Date;
@@ -85,13 +85,7 @@ const CustomCalendar: React.FC<CustomCalendarProps> = ({
       console.log('❌ Current:', todayOnly.toDateString());
       
       // Show user-friendly feedback
-      Toast.show({
-        type: 'error',
-        text1: 'Invalid Date',
-        text2: 'Please select today or a future date',
-        position: 'bottom',
-        visibilityTime: 3000,
-      });
+      Alert.alert('Invalid Date', 'Please select today or a future date');
       
       return; // Don't allow past date selection
     }

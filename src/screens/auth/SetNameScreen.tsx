@@ -5,14 +5,12 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { userAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
-import Toast from 'react-native-toast-message';
+import { Alert } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -24,20 +22,12 @@ const SetNameScreen = () => {
 
   const handleSetName = async () => {
     if (!name.trim()) {
-      Toast.show({
-        type: 'error',
-        text1: 'Invalid Name',
-        text2: 'Please enter your name',
-      });
+      Alert.alert('Invalid Name', 'Please enter your name');
       return;
     }
 
     if (name.trim().length < 2) {
-      Toast.show({
-        type: 'error',
-        text1: 'Invalid Name',
-        text2: 'Name must be at least 2 characters long',
-      });
+      Alert.alert('Invalid Name', 'Name must be at least 2 characters long');
       return;
     }
 
@@ -54,28 +44,17 @@ const SetNameScreen = () => {
         });
       }
       
-      Toast.show({
-        type: 'success',
-        text1: 'Welcome!',
-        text2: 'Your profile has been set up successfully',
-      });
+      Alert.alert('Welcome!', 'Your profile has been set up successfully');
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to set name',
-      });
+      Alert.alert('Error', error.response?.data?.message || 'Failed to set name');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.content}
-      >
+    <ScreenWrapper style={styles.container}>
+      <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.iconContainer}>
             <Ionicons name="person-add" size={48} color={theme.colors.primary} />
@@ -129,8 +108,8 @@ const SetNameScreen = () => {
             You can always change this later in your profile settings
           </Text>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </View>
+    </ScreenWrapper>
   );
 };
 

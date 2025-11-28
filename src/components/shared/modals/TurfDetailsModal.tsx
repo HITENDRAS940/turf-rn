@@ -13,7 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenWrapper } from "../ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../../contexts/ThemeContext";
 
@@ -234,7 +234,7 @@ const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <ScreenWrapper style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -283,7 +283,7 @@ const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
             </View>
           </View>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </ScreenWrapper>
     </Modal>
   );
 };

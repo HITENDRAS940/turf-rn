@@ -16,7 +16,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenWrapper } from "../ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useTheme } from "../../../contexts/ThemeContext";
@@ -129,7 +129,7 @@ const AvailabilityModal: React.FC<Props> = ({
       presentationStyle="pageSheet"
       onRequestClose={handleClose}
     >
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <ScreenWrapper style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -339,7 +339,7 @@ const AvailabilityModal: React.FC<Props> = ({
             )}
           </View>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </ScreenWrapper>
     </Modal>
   );
 };

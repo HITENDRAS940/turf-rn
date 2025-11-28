@@ -56,6 +56,15 @@ const ImageManagementModal: React.FC<ImageManagementModalProps> = ({
   const [selectedImages, setSelectedImages] = React.useState<ImageAsset[]>([]);
   const [deleteMode, setDeleteMode] = React.useState(false);
   const [selectedImageUrls, setSelectedImageUrls] = React.useState<string[]>([]);
+  const [imageLoadingStates, setImageLoadingStates] = React.useState<{ [key: string]: boolean }>({});
+
+  const handleImageLoadStart = (uri: string) => {
+    setImageLoadingStates(prev => ({ ...prev, [uri]: true }));
+  };
+
+  const handleImageLoadEnd = (uri: string) => {
+    setImageLoadingStates(prev => ({ ...prev, [uri]: false }));
+  };
 
   // Reset states when modal closes
   React.useEffect(() => {
@@ -308,7 +317,20 @@ const ImageManagementModal: React.FC<ImageManagementModalProps> = ({
                     key={`new-${index}`}
                     style={[styles.imageCard, { backgroundColor: theme.colors.card }]}
                   >
-                    <Image source={{ uri: asset.uri }} style={styles.image} resizeMode="cover" />
+                    <View style={styles.imageWrapper}>
+                      <Image 
+                        source={{ uri: asset.uri }} 
+                        style={styles.image} 
+                        resizeMode="cover"
+                        onLoadStart={() => handleImageLoadStart(asset.uri)}
+                        onLoadEnd={() => handleImageLoadEnd(asset.uri)}
+                      />
+                      {imageLoadingStates[asset.uri] && (
+                        <View style={styles.imageLoadingOverlay}>
+                          <ActivityIndicator size="small" color={theme.colors.primary} />
+                        </View>
+                      )}
+                    </View>
                     <TouchableOpacity
                       style={[styles.removeButton, { backgroundColor: theme.colors.error }]}
                       onPress={() => removeSelectedImage(index)}
@@ -357,7 +379,20 @@ const ImageManagementModal: React.FC<ImageManagementModalProps> = ({
                     disabled={!deleteMode}
                     activeOpacity={deleteMode ? 0.7 : 1}
                   >
-                    <Image source={{ uri: imageUrl }} style={styles.image} resizeMode="cover" />
+                    <View style={styles.imageWrapper}>
+                      <Image 
+                        source={{ uri: imageUrl }} 
+                        style={styles.image} 
+                        resizeMode="cover"
+                        onLoadStart={() => handleImageLoadStart(imageUrl)}
+                        onLoadEnd={() => handleImageLoadEnd(imageUrl)}
+                      />
+                      {imageLoadingStates[imageUrl] && (
+                        <View style={styles.imageLoadingOverlay}>
+                          <ActivityIndicator size="small" color={theme.colors.primary} />
+                        </View>
+                      )}
+                    </View>
                     {deleteMode && selectedImageUrls.includes(imageUrl) && (
                       <View style={styles.selectedOverlay} />
                     )}
@@ -646,6 +681,17 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  imageWrapper: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  imageLoadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(243, 244, 246, 0.5)',
   },
 });
 

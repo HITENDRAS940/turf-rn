@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Turf } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
-import Toast from 'react-native-toast-message';
+import { Alert } from 'react-native';
 
 interface TurfCardProps {
   turf: Turf;
@@ -30,11 +30,17 @@ const TurfCard: React.FC<TurfCardProps> = ({
   };
 
   const handleLocationPress = () => {
-    Toast.show({
-      type: 'info',
-      text1: 'Coming Soon',
-      text2: 'Location feature is under development',
-    });
+    Alert.alert('Coming Soon', 'Location feature is under development');
+  };
+
+  const [imageLoading, setImageLoading] = useState<{[key: number]: boolean}>({});
+
+  const handleImageLoadStart = (index: number) => {
+    setImageLoading(prev => ({ ...prev, [index]: true }));
+  };
+
+  const handleImageLoadEnd = (index: number) => {
+    setImageLoading(prev => ({ ...prev, [index]: false }));
   };
 
   return (
@@ -49,13 +55,21 @@ const TurfCard: React.FC<TurfCardProps> = ({
           style={styles.imageScrollView}
         >
           {images.map((imageUrl, index) => (
-            <Image 
-              key={index}
-              source={{ uri: imageUrl }} 
-              style={styles.image}
-              resizeMode="cover"
-              onError={() => console.log(`Failed to load image: ${imageUrl}`)}
-            />
+            <View key={index} style={styles.imageWrapper}>
+              <Image 
+                source={{ uri: imageUrl }} 
+                style={styles.image}
+                resizeMode="cover"
+                onLoadStart={() => handleImageLoadStart(index)}
+                onLoadEnd={() => handleImageLoadEnd(index)}
+                onError={() => console.log(`Failed to load image: ${imageUrl}`)}
+              />
+              {imageLoading[index] && (
+                <View style={styles.loadingOverlay}>
+                  <ActivityIndicator size="small" color={theme.colors.primary} />
+                </View>
+              )}
+            </View>
           ))}
         </ScrollView>
         
@@ -140,6 +154,15 @@ const styles = StyleSheet.create({
     width: Dimensions.get('window').width - 32, // Account for card margins
     height: 200,
     backgroundColor: '#F3F4F6',
+  },
+  imageWrapper: {
+    position: 'relative',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(243, 244, 246, 0.5)',
   },
   imageContainer: {
     position: 'relative',

@@ -5,7 +5,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { adminAPI, turfAPI } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { format } from 'date-fns';
 
 // Shared Components
@@ -141,8 +141,8 @@ const AdminTurfDetailScreen = () => {
       setRevenue(revenueData);
 
     } catch (error: any) {
-      console.error('Error fetching turf data:', error);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to fetch turf data');
+      console.error('Error fetching turf details:', error);
+      Alert.alert('Error', 'Failed to fetch turf details');
       
       setBookings([]);
       const defaultRevenue = calculateRevenueData([], turf.slots || []);
@@ -234,10 +234,11 @@ const AdminTurfDetailScreen = () => {
           onPress: async () => {
             try {
               await adminAPI.deleteTurf(turf.id);
-              Alert.alert('Success', 'Turf deleted successfully');
-              navigation.goBack();
-            } catch (error: any) {
-              Alert.alert('Error', error.response?.data?.message || 'Failed to delete turf');
+              Alert.alert('Success', 'Turf deleted successfully', [
+                { text: 'OK', onPress: () => navigation.goBack() }
+              ]);
+            } catch (error) {
+              Alert.alert('Error', 'Failed to delete turf');
             }
           }
         },
@@ -406,7 +407,7 @@ const AdminTurfDetailScreen = () => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]} safeAreaEdges={['top']}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: theme.colors.border || 'rgba(0,0,0,0.05)' }]}>
         <TouchableOpacity 
@@ -616,7 +617,7 @@ const AdminTurfDetailScreen = () => {
         turfName={turf.name}
         selectedDate={formatDateToYYYYMMDD(selectedDate)}
       />
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

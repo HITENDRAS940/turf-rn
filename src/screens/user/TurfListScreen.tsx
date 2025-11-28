@@ -10,7 +10,7 @@ import {
   TextInput,
   Keyboard,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { Ionicons } from '@expo/vector-icons';
 import { turfAPI } from '../../services/api';
 import { Turf } from '../../types';
@@ -18,7 +18,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import LoadingState from '../../components/shared/LoadingState';
 import EmptyState from '../../components/shared/EmptyState';
 import TurfCard from '../../components/user/TurfCard';
-import Toast from 'react-native-toast-message';
+import { Alert } from 'react-native';
 
 const TurfListScreen = ({ navigation }: any) => {
   const { theme } = useTheme();
@@ -53,11 +53,7 @@ const TurfListScreen = ({ navigation }: any) => {
       setTurfs(availableTurfs);
     } catch (error) {
       console.error('Error fetching turfs:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to fetch turfs',
-      });
+      Alert.alert('Error', 'Failed to fetch turfs');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -139,7 +135,7 @@ const TurfListScreen = ({ navigation }: any) => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Find Your Turf</Text>
         <TouchableOpacity onPress={handleSearch}>
@@ -176,7 +172,7 @@ const TurfListScreen = ({ navigation }: any) => {
         presentationStyle="pageSheet"
         onRequestClose={closeSearchModal}
       >
-        <SafeAreaView style={[styles.searchModalContainer, { backgroundColor: theme.colors.background }]}>
+        <ScreenWrapper style={[styles.searchModalContainer, { backgroundColor: theme.colors.background }]}>
           <View style={[styles.searchModalHeader, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
             <TouchableOpacity 
               style={styles.searchBackButton}
@@ -231,9 +227,9 @@ const TurfListScreen = ({ navigation }: any) => {
               showsVerticalScrollIndicator={false}
             />
           )}
-        </SafeAreaView>
+        </ScreenWrapper>
       </Modal>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

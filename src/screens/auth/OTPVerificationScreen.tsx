@@ -3,16 +3,14 @@ import {
   View,
   Text,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { OtpInput } from 'react-native-otp-entry';
 import { authAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { User } from '../../types';
-import Toast from 'react-native-toast-message';
+import { Alert } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import Button from '../../components/shared/Button';
 import { formatPhoneForDisplay } from '../../utils/phoneUtils';
@@ -26,11 +24,7 @@ const OTPVerificationScreen = ({ route, navigation }: any) => {
 
   const handleVerifyOTP = async () => {
     if (otp.length !== 6) {
-      Toast.show({
-        type: 'error',
-        text1: 'Invalid OTP',
-        text2: 'Please enter a 6-digit OTP',
-      });
+      Alert.alert('Invalid OTP', 'Please enter a 6-digit OTP');
       return;
     }
 
@@ -61,17 +55,9 @@ const OTPVerificationScreen = ({ route, navigation }: any) => {
         return;
       }
       
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: role === 'ROLE_ADMIN' ? 'Welcome Admin!' : 'Login successful!',
-      });
+      Alert.alert('Success', role === 'ROLE_ADMIN' ? 'Welcome Admin!' : 'Login successful!');
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Verification Failed',
-        text2: error.response?.data?.message || 'Invalid OTP',
-      });
+      Alert.alert('Verification Failed', error.response?.data?.message || 'Invalid OTP');
       setOtp('');
     } finally {
       setLoading(false);
@@ -81,26 +67,15 @@ const OTPVerificationScreen = ({ route, navigation }: any) => {
   const handleResendOTP = async () => {
     try {
       await authAPI.sendOTP(phone);
-      Toast.show({
-        type: 'success',
-        text1: 'OTP Resent',
-        text2: 'Check your phone for the new code',
-      });
+      Alert.alert('OTP Resent', 'Check your phone for the new code');
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to resend OTP',
-      });
+      Alert.alert('Error', 'Failed to resend OTP');
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.content}
-      >
+    <ScreenWrapper style={styles.container}>
+      <View style={styles.content}>
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -151,8 +126,8 @@ const OTPVerificationScreen = ({ route, navigation }: any) => {
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </View>
+    </ScreenWrapper>
   );
 };
 

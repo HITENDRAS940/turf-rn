@@ -5,13 +5,11 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { authAPI } from '../../services/api';
-import Toast from 'react-native-toast-message';
+import { Alert } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { validatePhoneNumber, getPhoneForAPI } from '../../utils/phoneUtils';
 
@@ -22,11 +20,8 @@ const PhoneEntryScreen = ({ navigation }: any) => {
 
   const handleSendOTP = async () => {
     if (!validatePhoneNumber(phone)) {
-      Toast.show({
-        type: 'error',
-        text1: 'Invalid Phone Number',
-        text2: 'Please enter a valid 10-digit phone number',
-      });
+
+      Alert.alert('Invalid Phone Number', 'Please enter a valid 10-digit phone number');
       return;
     }
 
@@ -34,79 +29,68 @@ const PhoneEntryScreen = ({ navigation }: any) => {
     try {
       const formattedPhone = getPhoneForAPI(phone);
       await authAPI.sendOTP(formattedPhone);
-      Toast.show({
-        type: 'success',
-        text1: 'OTP Sent',
-        text2: 'Check your phone for the verification code',
-      });
+      Alert.alert('OTP Sent', 'Check your phone for the verification code');
       navigation.navigate('OTPVerification', { phone: formattedPhone });
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to send OTP',
-      });
+      Alert.alert('Error', error.response?.data?.message || 'Failed to send OTP');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.content}
-      >
+    <ScreenWrapper style={styles.container}>
+      <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={[styles.title, { color: theme.colors.text }]}>Welcome to TurfBook</Text>
-          <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-            Enter your phone number to get started
-          </Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Welcome to TurfBook</Text>
+        <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+          Enter your phone number to get started
+        </Text>
+      </View>
+
+      <View style={styles.form}>
+        <Text style={[styles.label, { color: theme.colors.text }]}>Phone Number</Text>
+        <View style={[styles.inputContainer, { 
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.border 
+        }]}>
+          <Text style={[styles.prefix, { color: theme.colors.text }]}>+91</Text>
+          <TextInput
+            style={[styles.input, { color: theme.colors.text }]}
+            placeholder="Enter 10-digit number"
+            placeholderTextColor={theme.colors.textSecondary}
+            keyboardType="phone-pad"
+            maxLength={10}
+            value={phone}
+            onChangeText={setPhone}
+            editable={!loading}
+          />
         </View>
 
-        <View style={styles.form}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>Phone Number</Text>
-          <View style={[styles.inputContainer, { 
-            backgroundColor: theme.colors.surface,
-            borderColor: theme.colors.border 
-          }]}>
-            <Text style={[styles.prefix, { color: theme.colors.text }]}>+91</Text>
-            <TextInput
-              style={[styles.input, { color: theme.colors.text }]}
-              placeholder="Enter 10-digit number"
-              placeholderTextColor={theme.colors.textSecondary}
-              keyboardType="phone-pad"
-              maxLength={10}
-              value={phone}
-              onChangeText={setPhone}
-              editable={!loading}
-            />
-          </View>
+        <TouchableOpacity
+          style={[
+            styles.button,
+            { backgroundColor: theme.colors.primary },
+            loading && styles.buttonDisabled
+          ]}
+          onPress={handleSendOTP}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.buttonText}>Send OTP</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
-          <TouchableOpacity
-            style={[
-              styles.button,
-              { backgroundColor: theme.colors.primary },
-              loading && styles.buttonDisabled
-            ]}
-            onPress={handleSendOTP}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={styles.buttonText}>Send OTP</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
-            By continuing, you agree to our Terms & Privacy Policy
-          </Text>
-        </View>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      <View style={styles.footer}>
+        <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
+          By continuing, you agree to our Terms & Privacy Policy
+        </Text>
+      </View>
+      </View>
+    </ScreenWrapper>
   );
 };
 

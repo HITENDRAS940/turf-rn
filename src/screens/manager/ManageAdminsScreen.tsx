@@ -5,7 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { managerAPI } from '../../services/api';
 import { AdminResponse } from '../../types';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 
 const ManageAdminsScreen = () => {
   const navigation = useNavigation<any>();
@@ -90,7 +90,7 @@ const ManageAdminsScreen = () => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
@@ -129,7 +129,7 @@ const ManageAdminsScreen = () => {
           }
         />
       )}
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

@@ -6,7 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../components/shared/ScreenWrapper';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, themes } from '../contexts/ThemeContext';
 
@@ -62,7 +62,7 @@ const ThemeShowcaseScreen = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
@@ -80,7 +80,7 @@ const ThemeShowcaseScreen = ({ navigation }: any) => {
           {Object.values(themes).map(renderThemePreview)}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

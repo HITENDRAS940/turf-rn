@@ -5,7 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { managerAPI } from '../../services/api';
 import { ManagerTurfResponse } from '../../types';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 
 const ManagerTurfListScreen = () => {
   const navigation = useNavigation();
@@ -50,7 +50,7 @@ const ManagerTurfListScreen = () => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
@@ -76,7 +76,7 @@ const ManagerTurfListScreen = () => {
           }
         />
       )}
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

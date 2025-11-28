@@ -7,11 +7,10 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import Toast from 'react-native-toast-message';
 
 const AdminMoreScreen = () => {
   const { logout } = useAuth();
@@ -29,17 +28,9 @@ const AdminMoreScreen = () => {
           onPress: async () => {
             try {
               await logout();
-              Toast.show({
-                type: 'success',
-                text1: 'Logged Out',
-                text2: 'You have been logged out successfully',
-              });
+              Alert.alert('Logged Out', 'You have been logged out successfully');
             } catch (error) {
-              Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: 'Failed to logout',
-              });
+              Alert.alert('Error', 'Failed to logout');
             }
           },
         },
@@ -56,11 +47,7 @@ const AdminMoreScreen = () => {
           subtitle: 'Customize app appearance',
           icon: 'color-palette-outline',
           onPress: () => {
-            Toast.show({
-              type: 'info',
-              text1: 'Coming Soon',
-              text2: 'Theme settings will be available soon',
-            });
+            Alert.alert('Coming Soon', 'Theme settings will be available soon');
           },
         },
         {
@@ -68,11 +55,7 @@ const AdminMoreScreen = () => {
           subtitle: 'Manage notification preferences',
           icon: 'notifications-outline',
           onPress: () => {
-            Toast.show({
-              type: 'info',
-              text1: 'Coming Soon',
-              text2: 'Notification settings will be available soon',
-            });
+            Alert.alert('Coming Soon', 'Notification settings will be available soon');
           },
         },
       ],
@@ -85,11 +68,7 @@ const AdminMoreScreen = () => {
           subtitle: 'Get help and find answers',
           icon: 'help-circle-outline',
           onPress: () => {
-            Toast.show({
-              type: 'info',
-              text1: 'Coming Soon',
-              text2: 'Help section will be available soon',
-            });
+            Alert.alert('Coming Soon', 'Help section will be available soon');
           },
         },
         {
@@ -97,11 +76,7 @@ const AdminMoreScreen = () => {
           subtitle: 'Get in touch with our team',
           icon: 'mail-outline',
           onPress: () => {
-            Toast.show({
-              type: 'info',
-              text1: 'Coming Soon',
-              text2: 'Contact support will be available soon',
-            });
+            Alert.alert('Coming Soon', 'Contact support will be available soon');
           },
         },
       ],
@@ -114,11 +89,7 @@ const AdminMoreScreen = () => {
           subtitle: 'Read our terms and conditions',
           icon: 'document-text-outline',
           onPress: () => {
-            Toast.show({
-              type: 'info',
-              text1: 'Coming Soon',
-              text2: 'Terms of service will be available soon',
-            });
+            Alert.alert('Coming Soon', 'Terms of service will be available soon');
           },
         },
         {
@@ -126,11 +97,7 @@ const AdminMoreScreen = () => {
           subtitle: 'Read our privacy policy',
           icon: 'shield-checkmark-outline',
           onPress: () => {
-            Toast.show({
-              type: 'info',
-              text1: 'Coming Soon',
-              text2: 'Privacy policy will be available soon',
-            });
+            Alert.alert('Coming Soon', 'Privacy policy will be available soon');
           },
         },
       ],
@@ -166,7 +133,7 @@ const AdminMoreScreen = () => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>More</Text>
         <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>Admin settings and options</Text>
@@ -189,7 +156,7 @@ const AdminMoreScreen = () => {
       <View style={[styles.footer, { backgroundColor: theme.colors.surface }]}>
         <Text style={[styles.version, { color: theme.colors.textSecondary }]}>TurfBooking Admin v1.0.0</Text>
       </View>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

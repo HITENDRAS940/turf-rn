@@ -9,7 +9,7 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { adminAPI, turfAPI } from '../services/api';
-import Toast from 'react-native-toast-message';
+import { Alert } from 'react-native';
 import { formatDateToYYYYMMDD } from '../utils/dateUtils';
 import { calculateRevenueData, RevenueData } from '../utils/revenueUtils';
 import { getBookedSlotIds, mapSlotsWithBookingInfo } from '../utils/slotUtils';
@@ -66,20 +66,18 @@ export const useBookingData = (options?: UseBookingDataOptions) => {
     try {
       const formattedDate = formatDateToYYYYMMDD(date);
       const response = await adminAPI.getTurfBookings(turfId, formattedDate);
-      
+
       const fetchedBookings = response.data.bookings || [];
       setBookings(fetchedBookings);
-      
+
       return fetchedBookings;
     } catch (err: any) {
       const errorMsg = err.response?.data?.message || 'Failed to fetch bookings';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMsg,
-      });
+      setError(errorMsg);
+      options?.onError?.(errorMsg);
+      Alert.alert('Error', errorMsg);
       return [];
     } finally {
       setLoading(false);
@@ -111,11 +109,9 @@ export const useBookingData = (options?: UseBookingDataOptions) => {
       const errorMsg = err.response?.data?.message || 'Failed to fetch bookings';
       setError(errorMsg);
       options?.onError?.(errorMsg);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: errorMsg,
-      });
+      setError(errorMsg);
+      options?.onError?.(errorMsg);
+      Alert.alert('Error', errorMsg);
       return [];
     } finally {
       setLoading(false);
@@ -137,11 +133,11 @@ export const useBookingData = (options?: UseBookingDataOptions) => {
    */
   const revenueStats = useMemo((): RevenueData | null => {
     if (allSlots.length === 0) return null;
-    
+
     // Map slots with booking information
     const bookedSlotIds = getBookedSlotIds(bookings);
     const slotsWithBookings = mapSlotsWithBookingInfo(allSlots, bookedSlotIds);
-    
+
     return calculateRevenueData(bookings, slotsWithBookings);
   }, [bookings, allSlots]);
 
@@ -157,7 +153,7 @@ export const useBookingData = (options?: UseBookingDataOptions) => {
    * Filter bookings by status
    */
   const getBookingsByStatus = useCallback((status: string) => {
-    return bookings.filter(booking => 
+    return bookings.filter(booking =>
       booking.status.toLowerCase() === status.toLowerCase()
     );
   }, [bookings]);
@@ -166,7 +162,7 @@ export const useBookingData = (options?: UseBookingDataOptions) => {
    * Get confirmed bookings
    */
   const confirmedBookings = useMemo(() => {
-    return bookings.filter(b => 
+    return bookings.filter(b =>
       b.status === 'CONFIRMED' || b.status === 'confirmed'
     );
   }, [bookings]);
@@ -175,7 +171,7 @@ export const useBookingData = (options?: UseBookingDataOptions) => {
    * Get pending bookings
    */
   const pendingBookings = useMemo(() => {
-    return bookings.filter(b => 
+    return bookings.filter(b =>
       b.status === 'PENDING' || b.status === 'pending'
     );
   }, [bookings]);
@@ -184,7 +180,7 @@ export const useBookingData = (options?: UseBookingDataOptions) => {
    * Get cancelled bookings
    */
   const cancelledBookings = useMemo(() => {
-    return bookings.filter(b => 
+    return bookings.filter(b =>
       b.status === 'CANCELLED' || b.status === 'cancelled'
     );
   }, [bookings]);
@@ -222,12 +218,12 @@ export const useBookingData = (options?: UseBookingDataOptions) => {
     selectedDate,
     revenueStats,
     slotsWithBookingStatus,
-    
+
     // Filtered bookings
     confirmedBookings,
     pendingBookings,
     cancelledBookings,
-    
+
     // Actions
     fetchBookings,
     fetchAllBookings,

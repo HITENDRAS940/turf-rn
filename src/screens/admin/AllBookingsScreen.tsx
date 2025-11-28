@@ -7,7 +7,7 @@ import {
   RefreshControl,
   TouchableOpacity,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { Ionicons } from '@expo/vector-icons';
 import { adminAPI } from '../../services/api';
 import { Booking } from '../../types';
@@ -17,7 +17,7 @@ import EmptyState from '../../components/shared/EmptyState';
 import { formatPhoneForDisplay } from '../../utils/phoneUtils';
 import StatusBadge from '../../components/shared/StatusBadge';
 import { format } from 'date-fns';
-import Toast from 'react-native-toast-message';
+import { Alert } from 'react-native';
 
 const AllBookingsScreen = () => {
   const { theme } = useTheme();
@@ -43,11 +43,7 @@ const AllBookingsScreen = () => {
       const response = await adminAPI.getAllBookings();
       setBookings(response.data);
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to fetch bookings',
-      });
+      Alert.alert('Error', 'Failed to fetch bookings');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -168,7 +164,7 @@ const AllBookingsScreen = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>All Bookings</Text>
         <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>
@@ -201,7 +197,7 @@ const AllBookingsScreen = () => {
           }
         />
       )}
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

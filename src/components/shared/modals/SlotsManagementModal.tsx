@@ -18,7 +18,7 @@ import {
   KeyboardAvoidingView,
   Alert,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { ScreenWrapper } from "../ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
 
 import { useTheme } from "../../../contexts/ThemeContext";
@@ -207,7 +207,7 @@ const SlotsManagementModal: React.FC<Props> = ({
 
   return (
     <Modal visible={visible && !isClosing} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <ScreenWrapper style={{ flex: 1, backgroundColor: theme.colors.background }}>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -388,7 +388,7 @@ const SlotsManagementModal: React.FC<Props> = ({
             </View>
           </View>
         </KeyboardAvoidingView>
-      </SafeAreaView>
+      </ScreenWrapper>
     </Modal>
   );
 };

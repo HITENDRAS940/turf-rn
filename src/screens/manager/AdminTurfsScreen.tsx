@@ -4,8 +4,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { managerAPI } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
+import { Alert } from 'react-native';
 
 interface AdminTurf {
   id: number;
@@ -36,6 +36,15 @@ const AdminTurfsScreen = () => {
   const [turfs, setTurfs] = useState<AdminTurf[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [imagesLoading, setImagesLoading] = useState<{[key: number]: boolean}>({});
+
+  const handleImageLoadStart = (id: number) => {
+    setImagesLoading(prev => ({ ...prev, [id]: true }));
+  };
+
+  const handleImageLoadEnd = (id: number) => {
+    setImagesLoading(prev => ({ ...prev, [id]: false }));
+  };
 
   useEffect(() => {
     fetchAdminTurfs();
@@ -46,11 +55,7 @@ const AdminTurfsScreen = () => {
       const data = await managerAPI.getAdminTurfs(adminProfileId);
       setTurfs(data);
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to fetch turfs',
-      });
+      Alert.alert('Error', error.response?.data?.message || 'Failed to fetch turfs');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -86,7 +91,19 @@ const AdminTurfsScreen = () => {
       {/* Turf Image */}
       <View style={styles.imageContainer}>
         {item.images && item.images.length > 0 ? (
-          <Image source={{ uri: item.images[0] }} style={styles.turfImage} />
+          <View style={styles.imageWrapper}>
+            <Image 
+              source={{ uri: item.images[0] }} 
+              style={styles.turfImage}
+              onLoadStart={() => handleImageLoadStart(item.id)}
+              onLoadEnd={() => handleImageLoadEnd(item.id)}
+            />
+            {imagesLoading[item.id] && (
+              <View style={styles.loadingOverlay}>
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+              </View>
+            )}
+          </View>
         ) : (
           <View style={[styles.placeholderImage, { backgroundColor: theme.colors.border || 'rgba(0,0,0,0.05)' }]}>
             <Ionicons name="football-outline" size={40} color={theme.colors.textSecondary} />
@@ -154,7 +171,7 @@ const AdminTurfsScreen = () => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]} safeAreaEdges={['top']}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: theme.colors.border || 'rgba(0,0,0,0.05)' }]}>
         <TouchableOpacity 
@@ -239,7 +256,7 @@ const AdminTurfsScreen = () => {
           }
         />
       )}
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 
@@ -322,6 +339,17 @@ const styles = StyleSheet.create({
     position: 'relative',
     width: '100%',
     height: 180,
+  },
+  imageWrapper: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(243, 244, 246, 0.5)',
   },
   turfImage: {
     width: '100%',

@@ -3,9 +3,8 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { AdminResponse } from '../../types';
-import Toast from 'react-native-toast-message';
 
 const AdminDetailScreen = () => {
   const navigation = useNavigation<any>();
@@ -32,11 +31,7 @@ const AdminDetailScreen = () => {
       icon: 'cash-outline',
       color: '#F59E0B',
       action: () => {
-        Toast.show({
-          type: 'info',
-          text1: 'Coming Soon',
-          text2: 'Revenue analytics under development',
-        });
+        Alert.alert('Coming Soon', 'Revenue analytics under development');
       }
     },
     {
@@ -45,11 +40,7 @@ const AdminDetailScreen = () => {
       icon: 'calendar-outline',
       color: '#3B82F6',
       action: () => {
-        Toast.show({
-          type: 'info',
-          text1: 'Coming Soon',
-          text2: 'Bookings view under development',
-        });
+        Alert.alert('Coming Soon', 'Bookings view under development');
       }
     },
     {
@@ -58,11 +49,7 @@ const AdminDetailScreen = () => {
       icon: 'time-outline',
       color: '#8B5CF6',
       action: () => {
-        Toast.show({
-          type: 'info',
-          text1: 'Coming Soon',
-          text2: 'Activity log under development',
-        });
+        Alert.alert('Coming Soon', 'Activity log under development');
       }
     },
     {
@@ -71,11 +58,7 @@ const AdminDetailScreen = () => {
       icon: 'create-outline',
       color: '#6366F1',
       action: () => {
-        Toast.show({
-          type: 'info',
-          text1: 'Coming Soon',
-          text2: 'Edit admin feature under development',
-        });
+        Alert.alert('Coming Soon', 'Edit admin feature under development');
       }
     },
     {
@@ -84,11 +67,7 @@ const AdminDetailScreen = () => {
       icon: 'notifications-outline',
       color: '#EC4899',
       action: () => {
-        Toast.show({
-          type: 'info',
-          text1: 'Coming Soon',
-          text2: 'Notifications feature under development',
-        });
+        Alert.alert('Coming Soon', 'Notifications feature under development');
       }
     },
     {
@@ -106,11 +85,7 @@ const AdminDetailScreen = () => {
               text: 'Suspend',
               style: 'destructive',
               onPress: () => {
-                Toast.show({
-                  type: 'info',
-                  text1: 'Coming Soon',
-                  text2: 'Account suspension under development',
-                });
+                Alert.alert('Coming Soon', 'Account suspension under development');
               }
             }
           ]
@@ -130,7 +105,7 @@ const AdminDetailScreen = () => {
   );
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]} safeAreaEdges={['top']}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: theme.colors.border || 'rgba(0,0,0,0.05)' }]}>
         <TouchableOpacity 
@@ -194,7 +169,7 @@ const AdminDetailScreen = () => {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

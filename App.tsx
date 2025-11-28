@@ -4,7 +4,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { ThemeProvider, useTheme } from './src/contexts/ThemeContext';
 import AppNavigator from './src/navigation/AppNavigator';
-import Toast from 'react-native-toast-message';
 
 const AppContent = () => {
   const { theme } = useTheme();
@@ -16,7 +15,6 @@ const AppContent = () => {
         backgroundColor={theme.colors.surface} 
       />
       <AppNavigator />
-      <Toast />
     </>
   );
 };

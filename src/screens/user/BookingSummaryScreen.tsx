@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   Alert,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { Ionicons } from '@expo/vector-icons';
 import { turfAPI, bookingAPI } from '../../services/api';
 import { Turf, TimeSlot, BookingRequest, BookingResponse } from '../../types';
@@ -16,7 +16,6 @@ import LoadingState from '../../components/shared/LoadingState';
 import Button from '../../components/shared/Button';
 import TimeSlotCard from '../../components/user/TimeSlotCard';
 import { generateRandomPaymentDetails, simulatePaymentProcessing, formatPaymentMethod } from '../../utils/paymentUtils';
-import Toast from 'react-native-toast-message';
 import { format } from 'date-fns';
 
 const BookingSummaryScreen = ({ route, navigation }: any) => {
@@ -41,11 +40,7 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
       const response = await turfAPI.getTurfById(turfId);
       setTurfData(response.data);
     } catch (error) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to fetch turf details',
-      });
+      Alert.alert('Error', 'Failed to fetch turf details');
       navigation.goBack();
     } finally {
       setLoading(false);
@@ -101,11 +96,7 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
       setAvailableSlots(timeSlots);
     } catch (error) {
       console.error('❌ Error fetching slot availability:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to fetch available slots',
-      });
+      Alert.alert('Error', 'Failed to fetch available slots');
       // Fallback: show empty slots
       setAvailableSlots([]);
     }
@@ -128,11 +119,7 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
 
   const handleConfirmBooking = async () => {
     if (selectedSlots.length === 0) {
-      Toast.show({
-        type: 'error',
-        text1: 'No Slots Selected',
-        text2: 'Please select at least one time slot',
-      });
+      Alert.alert('No Slots Selected', 'Please select at least one time slot');
       return;
     }
 
@@ -160,21 +147,11 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
       console.log('💳 Generated payment details:', paymentDetails);
       
       // Simulate payment processing
-      Toast.show({
-        type: 'info',
-        text1: 'Processing Payment',
-        text2: `Using ${formatPaymentMethod(paymentDetails)}`,
-        visibilityTime: 2000,
-      });
       
       const paymentSuccess = await simulatePaymentProcessing();
       
       if (!paymentSuccess) {
-        Toast.show({
-          type: 'error',
-          text1: 'Payment Failed',
-          text2: 'Please try again with a different payment method',
-        });
+        Alert.alert('Payment Failed', 'Please try again with a different payment method');
         return;
       }
       
@@ -193,18 +170,24 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
       
       console.log('✅ Booking response:', bookingResponse);
 
-      Toast.show({
-        type: 'success',
-        text1: 'Booking Confirmed! 🎉',
-        text2: `Reference: ${bookingResponse.reference}`,
-        visibilityTime: 4000,
-      });
+      console.log('✅ Booking response:', bookingResponse);
 
-      // Navigate to bookings with success message
-      navigation.navigate('Bookings', { 
-        newBooking: bookingResponse,
-        showSuccess: true 
-      });
+      Alert.alert(
+        'Booking Confirmed! 🎉',
+        `Reference: ${bookingResponse.reference}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Navigate to bookings with success message
+              navigation.navigate('Bookings', { 
+                newBooking: bookingResponse,
+                showSuccess: true 
+              });
+            }
+          }
+        ]
+      );
       
     } catch (error: any) {
       console.error('❌ Booking error:', error);
@@ -212,12 +195,7 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
                           error.response?.data?.error || 
                           'Failed to create booking';
       
-      Toast.show({
-        type: 'error',
-        text1: 'Booking Failed',
-        text2: errorMessage,
-        visibilityTime: 4000,
-      });
+      Alert.alert('Booking Failed', errorMessage);
     } finally {
       setBookingLoading(false);
     }
@@ -231,7 +209,7 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
   if (!currentTurf) return null;
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
       <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
@@ -326,7 +304,7 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
           style={styles.confirmButton}
         />
       </View>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

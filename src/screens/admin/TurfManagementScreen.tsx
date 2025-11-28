@@ -1,14 +1,13 @@
 // filepath: /Users/hitendrasingh/Desktop/EzTurf/src/screens/admin/TurfManagementScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { turfAPI, adminAPI } from '../../services/api';
 import { Turf } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import Toast from 'react-native-toast-message';
 
 // Shared Components
 import LoadingState from '../../components/shared/LoadingState';
@@ -73,11 +72,8 @@ const TurfManagementScreen = () => {
       setTurfs(Array.isArray(turfList) ? turfList : []);
     } catch (error: any) {
       console.error('Error fetching turfs:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to fetch turfs',
-      });
+      console.error('Error fetching turfs:', error);
+      Alert.alert('Error', error.response?.data?.message || 'Failed to fetch turfs');
       setTurfs([]);
     } finally {
       setLoading(false);
@@ -122,11 +118,7 @@ const TurfManagementScreen = () => {
       
       setCurrentStep('details');
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to fetch turf details',
-      });
+      Alert.alert('Error', 'Failed to fetch turf details');
     }
   };
 
@@ -147,13 +139,9 @@ const TurfManagementScreen = () => {
         
         setSlots(mappedSlots);
       }
-    } catch (error: any) {
-      console.error('Error loading slots:', error);
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Failed to load slots',
-      });
+    } catch (error) {
+      console.error('Error fetching turfs:', error);
+      Alert.alert('Error', 'Failed to fetch turfs');
     } finally {
       setSlotsLoading(false);
     }
@@ -171,11 +159,7 @@ const TurfManagementScreen = () => {
           contactNumber: '',
         });
         
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Turf details updated successfully',
-        });
+        Alert.alert('Success', 'Turf details updated successfully');
       } else {
         // Create new turf
         const response = await adminAPI.createTurf({
@@ -188,20 +172,12 @@ const TurfManagementScreen = () => {
         const newTurfId = response.data?.id || response.data?.turf?.id;
         setCurrentTurfId(newTurfId);
         
-        Toast.show({
-          type: 'success',
-          text1: 'Success',
-          text2: 'Turf created successfully',
-        });
+        Alert.alert('Success', 'Turf created successfully');
       }
       
       fetchTurfs();
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} turf`,
-      });
+      Alert.alert('Error', error.response?.data?.message || `Failed to ${isEditMode ? 'update' : 'create'} turf`);
       throw error;
     }
   };
@@ -239,19 +215,11 @@ const TurfManagementScreen = () => {
         await adminAPI.setTurfNotAvailable(currentTurfId);
       }
 
-      Toast.show({
-        type: 'success',
-        text1: 'Success',
-        text2: `Turf set as ${isAvailable ? 'available' : 'not available'} successfully`,
-      });
+      Alert.alert('Success', `Turf set as ${isAvailable ? 'available' : 'not available'} successfully`);
 
       fetchTurfs();
     } catch (error: any) {
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: error.response?.data?.message || 'Failed to set turf availability',
-      });
+      Alert.alert('Error', error.response?.data?.message || 'Failed to set turf availability');
       throw error;
     }
   };
@@ -274,7 +242,7 @@ const TurfManagementScreen = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <ScreenWrapper style={styles.container} safeAreaEdges={['top']}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Turf Management</Text>
@@ -354,7 +322,7 @@ const TurfManagementScreen = () => {
         currentAvailability={false}
         turfName={turfDetailsData.name}
       />
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 
