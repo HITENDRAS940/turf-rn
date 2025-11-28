@@ -315,11 +315,8 @@ const TurfDetailScreen = ({ route, navigation }: any) => {
         visibilityTime: 4000,
       });
 
-      // Navigate to bookings with success message
-      navigation.navigate('Bookings', { 
-        newBooking: bookingResponse,
-        showSuccess: true 
-      });
+      // Navigate back to TurfListScreen (Turf tab)
+      navigation.navigate('TurfList');
       
     } catch (error: any) {
       console.error('❌ Booking error:', error);
