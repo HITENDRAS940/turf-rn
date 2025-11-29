@@ -107,48 +107,51 @@ const SlotGridCard: React.FC<SlotGridCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   title: {
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: 12,
+    marginBottom: 16,
+    letterSpacing: -0.3,
   },
   legendRow: {
     flexDirection: 'row',
     justifyContent: 'flex-start',
     gap: 16,
-    marginBottom: 12,
+    marginBottom: 16,
+    flexWrap: 'wrap',
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
   },
   legendDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
   },
   legendText: {
-    fontSize: 12,
+    fontSize: 13,
+    fontWeight: '500',
   },
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 10,
   },
   chip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
     borderWidth: 1,
   },
   chipText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
   },
 });

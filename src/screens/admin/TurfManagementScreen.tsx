@@ -1,6 +1,6 @@
 // filepath: /Users/hitendrasingh/Desktop/EzTurf/src/screens/admin/TurfManagementScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Alert, StatusBar } from 'react-native';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,8 @@ import { turfAPI, adminAPI } from '../../services/api';
 import { Turf } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Shared Components
 import LoadingState from '../../components/shared/LoadingState';
@@ -28,6 +30,7 @@ const TurfManagementScreen = () => {
   const { user } = useAuth();
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const insets = useSafeAreaInsets();
   const styles = createStyles(theme);
   
   // State
@@ -71,7 +74,6 @@ const TurfManagementScreen = () => {
       const turfList = response.data || response || [];
       setTurfs(Array.isArray(turfList) ? turfList : []);
     } catch (error: any) {
-      console.error('Error fetching turfs:', error);
       console.error('Error fetching turfs:', error);
       Alert.alert('Error', error.response?.data?.message || 'Failed to fetch turfs');
       setTurfs([]);
@@ -242,16 +244,33 @@ const TurfManagementScreen = () => {
   );
 
   return (
-    <ScreenWrapper style={styles.container} safeAreaEdges={['top']}>
+    <ScreenWrapper 
+      style={styles.container}
+      safeAreaEdges={['bottom', 'left', 'right']}
+    >
+      <StatusBar barStyle="light-content" />
       {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Turf Management</Text>
-        <TouchableOpacity 
-          style={styles.addButton}
-          onPress={startTurfCreation}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={[theme.colors.primary, theme.colors.secondary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.headerGradient, { paddingTop: insets.top + 10 }]}
         >
-          <Ionicons name="add" size={24} color="#FFFFFF" />
-        </TouchableOpacity>
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.headerTitle}>Turf Management</Text>
+              <Text style={styles.headerSubtitle}>Manage your listings</Text>
+            </View>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={startTurfCreation}
+              activeOpacity={0.8}
+            >
+              <Ionicons name="add" size={28} color={theme.colors.primary} />
+            </TouchableOpacity>
+          </View>
+        </LinearGradient>
       </View>
 
       {/* Turf List */}
@@ -331,36 +350,53 @@ const createStyles = (theme: any) => StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
   },
-  header: {
+  headerContainer: {
+    overflow: 'hidden',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    backgroundColor: theme.colors.surface,
+  },
+  headerGradient: {
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+  },
+  headerContent: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    backgroundColor: theme.colors.card,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border || 'rgba(0,0,0,0.05)',
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: theme.colors.text,
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500',
   },
   addButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.colors.primary,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 6,
   },
   listContainer: {
     padding: 20,
+    paddingBottom: 100,
   },
   emptyContainer: {
     flex: 1,

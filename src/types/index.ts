@@ -26,6 +26,7 @@ export interface Turf {
   contactNumber?: string;
   openingTime?: string;
   closingTime?: string;
+  price?: number;
 }
 
 export interface TimeSlot {

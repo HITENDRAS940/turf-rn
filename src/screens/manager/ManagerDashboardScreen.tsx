@@ -6,6 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { managerAPI } from '../../services/api';
+import GradientHeader from '../../components/shared/GradientHeader';
 
 const { width } = Dimensions.get('window');
 
@@ -67,8 +68,7 @@ const ManagerDashboardScreen = () => {
   const StatCard = ({ title, count, icon, color }: any) => (
     <View style={[styles.statCard, { 
       backgroundColor: theme.colors.card,
-      borderWidth: 1,
-      borderColor: theme.colors.border || 'rgba(0,0,0,0.05)',
+      shadowColor: theme.colors.shadow,
     }]}>
       <View style={styles.statCardHeader}>
         <View style={[styles.statIconContainer, { backgroundColor: color + '15' }]}>
@@ -85,37 +85,39 @@ const ManagerDashboardScreen = () => {
   );
 
   return (
-    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]} safeAreaEdges={['top']}>
+    <ScreenWrapper 
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      safeAreaEdges={['left', 'right', 'bottom']}
+    >
       <StatusBar barStyle="light-content" />
       
-      {/* Header Section with Badge */}
-      <View style={[styles.header, { 
-        backgroundColor: theme.colors.card,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border || 'rgba(0,0,0,0.05)',
-      }]}>
-        <View style={styles.headerLeft}>
-          <View style={[styles.avatarContainer, { backgroundColor: theme.colors.primary + '20' }]}>
-            <Text style={[styles.avatarText, { color: theme.colors.primary }]}>
-              {user?.name?.charAt(0).toUpperCase() || 'M'}
-            </Text>
-          </View>
-          <View>
-            <Text style={[styles.greeting, { color: theme.colors.textSecondary }]}>Welcome back,</Text>
-            <Text style={[styles.name, { color: theme.colors.text }]}>{user?.name || 'Manager'}</Text>
-            <View style={[styles.roleBadge, { backgroundColor: '#4F46E5' + '20' }]}>
-              <Ionicons name="shield-checkmark" size={12} color="#4F46E5" />
-              <Text style={[styles.roleText, { color: '#4F46E5' }]}>Manager</Text>
+      <GradientHeader title="">
+        <View style={styles.headerContent}>
+          <View style={styles.headerTop}>
+            <View style={styles.userInfo}>
+              <View style={[styles.avatarContainer, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                <Text style={styles.avatarText}>
+                  {user?.name?.charAt(0).toUpperCase() || 'M'}
+                </Text>
+              </View>
+              <View>
+                <Text style={styles.greeting}>Welcome back,</Text>
+                <Text style={styles.name}>{user?.name || 'Manager'}</Text>
+                <View style={[styles.roleBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                  <Ionicons name="shield-checkmark" size={12} color="#FFFFFF" />
+                  <Text style={styles.roleText}>Manager</Text>
+                </View>
+              </View>
             </View>
+            <TouchableOpacity 
+              onPress={logout} 
+              style={[styles.logoutButton, { backgroundColor: 'rgba(255,255,255,0.2)' }]}
+            >
+              <Ionicons name="log-out-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
           </View>
         </View>
-        <TouchableOpacity 
-          onPress={logout} 
-          style={[styles.logoutButton, { backgroundColor: theme.colors.error + '15' }]}
-        >
-          <Ionicons name="log-out-outline" size={22} color={theme.colors.error} />
-        </TouchableOpacity>
-      </View>
+      </GradientHeader>
 
       <ScrollView 
         contentContainerStyle={styles.content}
@@ -145,7 +147,13 @@ const ManagerDashboardScreen = () => {
           {menuItems.map((item, index) => (
             <TouchableOpacity
               key={index}
-              style={[styles.actionCard, { backgroundColor: theme.colors.card }]}
+              style={[
+                styles.actionCard, 
+                { 
+                  backgroundColor: theme.colors.card,
+                  shadowColor: theme.colors.shadow,
+                }
+              ]}
               onPress={() => navigation.navigate(item.route)}
               activeOpacity={0.7}
             >
@@ -171,15 +179,22 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  headerGradient: {
+    paddingBottom: 30,
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
     marginBottom: 10,
   },
-  headerLeft: {
+  headerContent: {
+    paddingBottom: 10,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  userInfo: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
@@ -190,10 +205,25 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   avatarText: {
     fontSize: 22,
     fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  greeting: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'rgba(255,255,255,0.9)',
+    marginBottom: 2,
+  },
+  name: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
   },
   roleBadge: {
     flexDirection: 'row',
@@ -202,29 +232,23 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
     borderRadius: 6,
     marginTop: 6,
+    alignSelf: 'flex-start',
     gap: 4,
   },
   roleText: {
     fontSize: 11,
     fontWeight: '600',
-  },
-  greeting: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: '700',
-    letterSpacing: -0.5,
+    color: '#FFFFFF',
   },
   logoutButton: {
     padding: 10,
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
   content: {
     padding: 20,
-    paddingTop: 0,
+    paddingTop: 10,
   },
   sectionTitle: {
     fontSize: 18,
@@ -240,7 +264,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     borderRadius: 20,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 12,
@@ -277,7 +300,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderRadius: 20,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 12,

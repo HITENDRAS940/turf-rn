@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, RefreshControl, Image, StatusBar, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { managerAPI } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { Alert } from 'react-native';
+import GradientHeader from '../../components/shared/GradientHeader';
 
 interface AdminTurf {
   id: number;
@@ -82,7 +83,13 @@ const AdminTurfsScreen = () => {
 
   const renderTurfCard = ({ item }: { item: AdminTurf }) => (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: theme.colors.card }]}
+      style={[
+        styles.card, 
+        { 
+          backgroundColor: theme.colors.card,
+          shadowColor: theme.colors.shadow,
+        }
+      ]}
       activeOpacity={0.7}
       onPress={() => {
         navigation.navigate('ManagerTurfDetail', { turf: item });
@@ -142,16 +149,16 @@ const AdminTurfsScreen = () => {
 
         {/* Stats Row */}
         <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Ionicons name="time-outline" size={16} color={theme.colors.primary} />
-            <Text style={[styles.statText, { color: theme.colors.text }]}>
+          <View style={[styles.statItem, { backgroundColor: theme.colors.primary + '15' }]}>
+            <Ionicons name="time-outline" size={14} color={theme.colors.primary} />
+            <Text style={[styles.statText, { color: theme.colors.primary }]}>
               {getActiveSlots(item.slots)}/24 Slots
             </Text>
           </View>
           
-          <View style={styles.statItem}>
-            <Ionicons name="cash-outline" size={16} color="#10B981" />
-            <Text style={[styles.statText, { color: theme.colors.text }]}>
+          <View style={[styles.statItem, { backgroundColor: '#10B981' + '15' }]}>
+            <Ionicons name="cash-outline" size={14} color="#10B981" />
+            <Text style={[styles.statText, { color: '#10B981' }]}>
               From {getLowestPrice(item.slots)}
             </Text>
           </View>
@@ -171,23 +178,15 @@ const AdminTurfsScreen = () => {
   );
 
   return (
-    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]} safeAreaEdges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: theme.colors.border || 'rgba(0,0,0,0.05)' }]}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
-          style={[styles.backButton, { backgroundColor: theme.colors.card }]}
-        >
-          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <View style={{ flex: 1, marginHorizontal: 12 }}>
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Turfs</Text>
-          <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>
-            {adminName}
-          </Text>
-        </View>
-        <View style={{ width: 40 }} />
-      </View>
+    <ScreenWrapper 
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      safeAreaEdges={['left', 'right', 'bottom']}
+    >
+      <GradientHeader
+        title="Turfs"
+        subtitle={`Managed by ${adminName}`}
+        showBack={true}
+      />
 
       {/* Turfs List */}
       {loading ? (
@@ -224,7 +223,7 @@ const AdminTurfsScreen = () => {
           }
           ListHeaderComponent={
             turfs.length > 0 ? (
-              <View style={[styles.statsHeader, { backgroundColor: theme.colors.card }]}>
+              <View style={[styles.statsHeader, { backgroundColor: theme.colors.card, shadowColor: theme.colors.shadow }]}>
                 <View style={styles.statsHeaderItem}>
                   <Text style={[styles.statsHeaderValue, { color: theme.colors.primary }]}>
                     {turfs.length}
@@ -264,37 +263,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  headerSubtitle: {
-    fontSize: 13,
-    fontWeight: '500',
-    marginTop: 2,
-  },
   list: {
     padding: 20,
+    paddingBottom: 40,
   },
   statsHeader: {
     flexDirection: 'row',
@@ -302,7 +273,6 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 16,
     marginBottom: 20,
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -327,9 +297,8 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    borderRadius: 16,
+    borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -400,16 +369,19 @@ const styles = StyleSheet.create({
   },
   statsRow: {
     flexDirection: 'row',
-    gap: 16,
-    marginBottom: 8,
+    gap: 12,
+    marginBottom: 12,
   },
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
   statText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
   },
   contactRow: {

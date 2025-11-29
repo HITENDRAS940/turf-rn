@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, ActivityIndicator, RefreshControl, StatusBar, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { managerAPI } from '../../services/api';
 import { AdminResponse } from '../../types';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
+import GradientHeader from '../../components/shared/GradientHeader';
 
 const ManageAdminsScreen = () => {
   const navigation = useNavigation<any>();
@@ -60,11 +61,22 @@ const ManageAdminsScreen = () => {
 
   const renderItem = ({ item }: { item: AdminResponse }) => (
     <TouchableOpacity 
-      style={[styles.card, { backgroundColor: theme.colors.card }]}
+      style={[
+        styles.card, 
+        { 
+          backgroundColor: theme.colors.card,
+          shadowColor: theme.colors.shadow,
+        }
+      ]}
       onPress={() => navigation.navigate('AdminDetail', { admin: item })}
       activeOpacity={0.7}
     >
       <View style={styles.cardHeader}>
+        <View style={styles.avatarContainer}>
+          <Text style={[styles.avatarText, { color: theme.colors.primary }]}>
+            {item.name.charAt(0).toUpperCase()}
+          </Text>
+        </View>
         <View style={{ flex: 1 }}>
           <Text style={[styles.name, { color: theme.colors.text }]}>{item.name}</Text>
           <Text style={[styles.business, { color: theme.colors.primary }]}>{item.businessName}</Text>
@@ -74,15 +86,21 @@ const ManageAdminsScreen = () => {
       
       <View style={styles.details}>
         <View style={styles.detailRow}>
-          <Ionicons name="call-outline" size={16} color={theme.colors.textSecondary} />
+          <View style={[styles.iconContainer, { backgroundColor: theme.colors.surface }]}>
+            <Ionicons name="call-outline" size={14} color={theme.colors.textSecondary} />
+          </View>
           <Text style={[styles.detailText, { color: theme.colors.textSecondary }]}>{item.phone}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Ionicons name="mail-outline" size={16} color={theme.colors.textSecondary} />
+          <View style={[styles.iconContainer, { backgroundColor: theme.colors.surface }]}>
+            <Ionicons name="mail-outline" size={14} color={theme.colors.textSecondary} />
+          </View>
           <Text style={[styles.detailText, { color: theme.colors.textSecondary }]}>{item.email}</Text>
         </View>
         <View style={styles.detailRow}>
-          <Ionicons name="location-outline" size={16} color={theme.colors.textSecondary} />
+          <View style={[styles.iconContainer, { backgroundColor: theme.colors.surface }]}>
+            <Ionicons name="location-outline" size={14} color={theme.colors.textSecondary} />
+          </View>
           <Text style={[styles.detailText, { color: theme.colors.textSecondary }]}>{item.businessAddress}</Text>
         </View>
       </View>
@@ -90,19 +108,23 @@ const ManageAdminsScreen = () => {
   );
 
   return (
-    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Manage Admins</Text>
-        <TouchableOpacity 
-          style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
-          onPress={() => navigation.navigate('CreateAdmin')}
-        >
-          <Ionicons name="add" size={24} color="#FFF" />
-        </TouchableOpacity>
-      </View>
+    <ScreenWrapper 
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      safeAreaEdges={['left', 'right', 'bottom']}
+    >
+      <GradientHeader
+        title="Manage Admins"
+        subtitle="View and manage platform administrators"
+        showBack={true}
+        rightElement={
+          <TouchableOpacity 
+            style={styles.addButton}
+            onPress={() => navigation.navigate('CreateAdmin')}
+          >
+            <Ionicons name="add" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
+        }
+      />
 
       {loading ? (
         <View style={styles.center}>
@@ -137,71 +159,119 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  headerGradient: {
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  headerContent: {
+    paddingTop: 10,
+    gap: 16,
+  },
+  headerTop: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
+    alignItems: 'center',
   },
   backButton: {
-    padding: 8,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   addButton: {
     width: 40,
     height: 40,
     borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500',
   },
   list: {
     padding: 16,
     gap: 16,
+    paddingBottom: 40,
   },
   card: {
     padding: 16,
-    borderRadius: 12,
-    shadowColor: '#000',
+    borderRadius: 16,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 3,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  avatarContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    fontSize: 20,
+    fontWeight: '700',
   },
   name: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    fontWeight: '700',
+    marginBottom: 2,
   },
   business: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   details: {
-    gap: 8,
+    gap: 10,
   },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 10,
+  },
+  iconContainer: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   detailText: {
     fontSize: 14,
+    flex: 1,
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: 40,
   },
 });
 

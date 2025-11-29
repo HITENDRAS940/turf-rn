@@ -1,13 +1,14 @@
 
 // filepath: /Users/hitendrasingh/Desktop/EzTurf/src/screens/manager/ManagerTurfDetailScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, StatusBar, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { managerAPI, turfAPI } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { format } from 'date-fns';
+import GradientHeader from '../../components/shared/GradientHeader';
 
 // Shared Components
 import RevenueCard from '../../components/shared/cards/RevenueCard';
@@ -159,36 +160,39 @@ const ManagerTurfDetailScreen = () => {
   };
 
   return (
-    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]} safeAreaEdges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: theme.colors.border || 'rgba(0,0,0,0.05)' }]}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
-          style={[styles.backButton, { backgroundColor: theme.colors.card }]}
-        >
-          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <View style={{ flex: 1, marginHorizontal: 12 }}>
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]} numberOfLines={1}>
-            {turf.name}
-          </Text>
+    <ScreenWrapper 
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      safeAreaEdges={['left', 'right', 'bottom']}
+    >
+      <GradientHeader
+        title={turf.name}
+        subtitle={
           <View style={styles.headerLocationRow}>
-            <Ionicons name="location-outline" size={14} color={theme.colors.textSecondary} />
-            <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+            <Ionicons name="location-outline" size={14} color="rgba(255,255,255,0.8)" />
+            <Text style={styles.headerSubtitle} numberOfLines={1}>
               {turf.location}
             </Text>
           </View>
-        </View>
-        <View style={[styles.managerBadge, { backgroundColor: theme.colors.primary + '20' }]}>
-          <Ionicons name="eye-outline" size={16} color={theme.colors.primary} />
-          <Text style={[styles.managerBadgeText, { color: theme.colors.primary }]}>
-            View Only
-          </Text>
-        </View>
-      </View>
+        }
+        showBack={true}
+        rightElement={
+          <View style={[styles.managerBadge, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+            <Ionicons name="eye-outline" size={16} color="#FFFFFF" />
+            <Text style={styles.managerBadgeText}>
+              View Only
+            </Text>
+          </View>
+        }
+      />
 
       {/* Date Selector */}
-      <View style={[styles.dateSelector, { backgroundColor: theme.colors.card }]}>
+      <View style={[
+        styles.dateSelector, 
+        { 
+          backgroundColor: theme.colors.card,
+          shadowColor: theme.colors.shadow,
+        }
+      ]}>
         <TouchableOpacity 
           onPress={() => changeDate(-1)}
           style={styles.dateButton}
@@ -265,39 +269,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  headerGradient: {
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  headerContent: {
+    paddingTop: 10,
+    gap: 16,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  headerLocationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
-  },
-  headerSubtitle: {
-    fontSize: 12,
-    fontWeight: '500',
-    flex: 1,
   },
   managerBadge: {
     flexDirection: 'row',
@@ -305,11 +298,35 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 8,
+    borderRadius: 12,
   },
   managerBadgeText: {
     fontSize: 12,
     fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  headerTitleContainer: {
+    paddingBottom: 8,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  headerLocationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500',
+    flex: 1,
   },
   dateSelector: {
     flexDirection: 'row',
@@ -317,11 +334,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    marginHorizontal: 20,
+    marginTop: -20,
+    borderRadius: 16,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   dateButton: {
     padding: 8,
@@ -348,12 +367,13 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    paddingTop: 12,
   },
   bookingsContainer: {
     marginBottom: 20,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     marginBottom: 12,
   },
@@ -369,6 +389,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: 40,
   },
   loadingText: {
     marginTop: 12,

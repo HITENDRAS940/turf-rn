@@ -52,7 +52,7 @@ const generateMockCardNumber = (): string => {
 export const generateRandomPaymentDetails = (amount: number): PaymentDetails => {
   const method = PAYMENT_METHODS[Math.floor(Math.random() * PAYMENT_METHODS.length)];
   const transactionId = generateTransactionId();
-  
+
   const basePayment: PaymentDetails = {
     method,
     transactionId,
@@ -103,5 +103,28 @@ export const simulatePaymentProcessing = (): Promise<boolean> => {
       const success = Math.random() > 0.05;
       resolve(success);
     }, delay);
+  });
+};
+
+/**
+ * Simulates Cashfree payment gateway flow
+ */
+export const simulateCashfreePayment = (amount: number): Promise<{ success: boolean; paymentId?: string }> => {
+  return new Promise((resolve) => {
+    console.log(`💸 Initiating Cashfree payment for ₹${amount}`);
+
+    // Simulate gateway initialization
+    setTimeout(() => {
+      console.log('🔄 Redirecting to Cashfree...');
+
+      // Simulate user interaction and processing
+      setTimeout(() => {
+        const success = true; // Always succeed for testing
+        const paymentId = `CF_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+        console.log(success ? '✅ Payment Successful' : '❌ Payment Failed');
+        resolve({ success, paymentId });
+      }, 2000);
+    }, 1000);
   });
 };

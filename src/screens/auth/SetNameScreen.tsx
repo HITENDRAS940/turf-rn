@@ -6,8 +6,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { userAPI } from '../../services/api';
 import { useAuth } from '../../contexts/AuthContext';
 import { Alert } from 'react-native';
@@ -19,6 +25,7 @@ const SetNameScreen = () => {
   const [loading, setLoading] = useState(false);
   const { user, updateUser } = useAuth();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
 
   const handleSetName = async () => {
     if (!name.trim()) {
@@ -53,139 +60,182 @@ const SetNameScreen = () => {
   };
 
   return (
-    <ScreenWrapper style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.header}>
-          <View style={styles.iconContainer}>
-            <Ionicons name="person-add" size={48} color={theme.colors.primary} />
-          </View>
-          <Text style={[styles.title, { color: theme.colors.text }]}>Welcome to TurfBook!</Text>
-          <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-            Let's get you set up. What should we call you?
-          </Text>
-        </View>
-
-        <View style={styles.form}>
-          <Text style={[styles.label, { color: theme.colors.text }]}>Your Name</Text>
-          <TextInput
-            style={[styles.input, { 
-              backgroundColor: theme.colors.surface,
-              borderColor: theme.colors.border,
-              color: theme.colors.text 
-            }]}
-            placeholder="Enter your full name"
-            placeholderTextColor={theme.colors.textSecondary}
-            value={name}
-            onChangeText={setName}
-            editable={!loading}
-            autoCapitalize="words"
-            autoComplete="name"
-            maxLength={50}
-          />
-
-          <TouchableOpacity
-            style={[
-              styles.button,
-              { backgroundColor: theme.colors.primary },
-              loading && styles.buttonDisabled
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      <LinearGradient
+        colors={[theme.colors.primary, theme.colors.secondary]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.background}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.keyboardView}
+        >
+          <ScrollView 
+            contentContainerStyle={[
+              styles.scrollContent,
+              { paddingTop: insets.top + 24, paddingBottom: insets.bottom + 24 }
             ]}
-            onPress={handleSetName}
-            disabled={loading || !name.trim()}
+            showsVerticalScrollIndicator={false}
           >
-            {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <>
-                <Text style={styles.buttonText}>Continue</Text>
-                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
-              </>
-            )}
-          </TouchableOpacity>
-        </View>
+            <View style={styles.header}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="person-add-outline" size={32} color="#FFFFFF" />
+              </View>
+              <Text style={styles.title}>Welcome to TurfBook!</Text>
+              <Text style={styles.subtitle}>
+                Let's get you set up. What should we call you?
+              </Text>
+            </View>
 
-        <View style={styles.footer}>
-          <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
-            You can always change this later in your profile settings
-          </Text>
-        </View>
-      </View>
-    </ScreenWrapper>
+            <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
+              <View style={styles.form}>
+                <Text style={[styles.label, { color: theme.colors.text }]}>Your Name</Text>
+                <TextInput
+                  style={[styles.input, { 
+                    backgroundColor: theme.colors.lightGray,
+                    borderColor: theme.colors.border,
+                    color: theme.colors.text 
+                  }]}
+                  placeholder="Enter your full name"
+                  placeholderTextColor={theme.colors.textSecondary}
+                  value={name}
+                  onChangeText={setName}
+                  editable={!loading}
+                  autoCapitalize="words"
+                  autoComplete="name"
+                  maxLength={50}
+                />
+
+                <TouchableOpacity
+                  style={[
+                    styles.button,
+                    { backgroundColor: theme.colors.primary },
+                    loading && styles.buttonDisabled
+                  ]}
+                  onPress={handleSetName}
+                  disabled={loading || !name.trim()}
+                  activeOpacity={0.8}
+                >
+                  {loading ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <>
+                      <Text style={styles.buttonText}>Continue</Text>
+                      <Ionicons name="arrow-forward" size={20} color="#FFFFFF" />
+                    </>
+                  )}
+                </TouchableOpacity>
+                
+                <Text style={[styles.footerText, { color: theme.colors.textSecondary }]}>
+                  You can always change this later in your profile settings
+                </Text>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </LinearGradient>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
   },
-  content: {
+  background: {
     flex: 1,
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
     padding: 24,
-    justifyContent: 'space-between',
   },
   header: {
     alignItems: 'center',
-    marginTop: 60,
-  },
-  iconContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginBottom: 24,
   },
+  iconContainer: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
   title: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '700',
+    color: '#FFFFFF',
     marginBottom: 8,
     textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
     textAlign: 'center',
     lineHeight: 24,
+    paddingHorizontal: 20,
+  },
+  card: {
+    borderRadius: 24,
+    padding: 32,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
   form: {
-    flex: 1,
-    marginTop: 40,
+    width: '100%',
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
+    marginLeft: 4,
   },
   input: {
     borderWidth: 1,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     fontSize: 16,
     height: 56,
   },
   button: {
     height: 56,
-    borderRadius: 12,
+    borderRadius: 16,
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 24,
+    marginBottom: 16,
     gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   buttonDisabled: {
-    opacity: 0.6,
+    opacity: 0.7,
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  footer: {
-    alignItems: 'center',
-    paddingVertical: 20,
+    fontWeight: '700',
   },
   footerText: {
     fontSize: 12,
     textAlign: 'center',
+    lineHeight: 18,
   },
 });
 

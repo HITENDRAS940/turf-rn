@@ -6,6 +6,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,9 +18,12 @@ import Button from '../../components/shared/Button';
 import TimeSlotCard from '../../components/user/TimeSlotCard';
 import { generateRandomPaymentDetails, simulatePaymentProcessing, formatPaymentMethod } from '../../utils/paymentUtils';
 import { format } from 'date-fns';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const BookingSummaryScreen = ({ route, navigation }: any) => {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { turf, turfId } = route.params;
   const [turfData, setTurfData] = useState<Turf | null>(turf || null);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -73,12 +77,9 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
     try {
       const id = turfData?.id || turfId;
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      console.log(`🔄 Fetching slot availability for turf ${id} on ${dateStr}`);
       
       const response = await turfAPI.getSlotAvailability(id, dateStr);
       const slotAvailabilityData = response.data;
-      
-      console.log(`📊 Received ${slotAvailabilityData.length} slot availability records:`, slotAvailabilityData);
       
       // Sort slots by slotId to ensure correct chronological order (1-24)
       const sortedSlotData = slotAvailabilityData.sort((a: any, b: any) => a.slotId - b.slotId);
@@ -86,13 +87,9 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
       // Generate time slots based on the availability response
       const timeSlots: TimeSlot[] = sortedSlotData.map((slot: any) => {
         const timeSlot = generateTimeSlot(slot.slotId, slot.available, slot.price);
-        
-        console.log(`⏰ Generated slot ${slot.slotId}: ${timeSlot.startTime}-${timeSlot.endTime}, available: ${slot.available}, price: ₹${slot.price}`);
-        
         return timeSlot;
       });
       
-      console.log(`✅ Total slots generated: ${timeSlots.length} (sorted by slotId)`);
       setAvailableSlots(timeSlots);
     } catch (error) {
       console.error('❌ Error fetching slot availability:', error);
@@ -144,10 +141,7 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
       const totalAmount = calculateTotal();
       const paymentDetails = generateRandomPaymentDetails(totalAmount);
       
-      console.log('💳 Generated payment details:', paymentDetails);
-      
       // Simulate payment processing
-      
       const paymentSuccess = await simulatePaymentProcessing();
       
       if (!paymentSuccess) {
@@ -163,15 +157,9 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
         paymentDetails: paymentDetails,
       };
 
-      console.log('📋 Booking request:', bookingRequest);
-
       const response = await bookingAPI.createBooking(bookingRequest);
       const bookingResponse: BookingResponse = response.data;
       
-      console.log('✅ Booking response:', bookingResponse);
-
-      console.log('✅ Booking response:', bookingResponse);
-
       Alert.alert(
         'Booking Confirmed! 🎉',
         `Reference: ${bookingResponse.reference}`,
@@ -209,42 +197,69 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
   if (!currentTurf) return null;
 
   return (
-    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Book Slot</Text>
-        <View style={{ width: 24 }} />
+    <ScreenWrapper 
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      safeAreaEdges={['bottom', 'left', 'right']}
+    >
+      <StatusBar barStyle="light-content" />
+      {/* Header */}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={[theme.colors.primary, theme.colors.secondary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.headerGradient, { paddingTop: insets.top + 10 }]}
+        >
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <View>
+              <Text style={styles.headerTitle}>Book Slot</Text>
+              <Text style={styles.headerSubtitle}>Select your preferred time</Text>
+            </View>
+          </View>
+        </LinearGradient>
       </View>
 
-      <ScrollView style={styles.content}>
-        <View style={[styles.turfInfo, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}>
+      <ScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Turf Info Card */}
+        <View style={[styles.card, { backgroundColor: theme.colors.surface }]}>
           <Text style={[styles.turfName, { color: theme.colors.text }]}>{currentTurf.name}</Text>
           <View style={styles.locationRow}>
-            <Ionicons name="location" size={16} color={theme.colors.gray} />
+            <Ionicons name="location" size={16} color={theme.colors.primary} />
             <Text style={[styles.location, { color: theme.colors.textSecondary }]}>{currentTurf.location}</Text>
           </View>
         </View>
 
+        {/* Date Selection */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Select Date</Text>
-          <View style={[styles.dateCard, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}>
-            <Ionicons name="calendar" size={20} color={theme.colors.primary} />
-            <Text style={[styles.dateText, { color: theme.colors.text }]}>
-              {format(selectedDate, 'EEEE, dd MMMM yyyy')}
-            </Text>
+          <View style={[styles.dateCard, { backgroundColor: theme.colors.surface, borderColor: theme.colors.primary }]}>
+            <View style={[styles.iconContainer, { backgroundColor: theme.colors.primary + '15' }]}>
+              <Ionicons name="calendar" size={24} color={theme.colors.primary} />
+            </View>
+            <View>
+              <Text style={[styles.dateLabel, { color: theme.colors.textSecondary }]}>Date</Text>
+              <Text style={[styles.dateText, { color: theme.colors.text }]}>
+                {format(selectedDate, 'EEEE, dd MMMM yyyy')}
+              </Text>
+            </View>
           </View>
-          <Text style={[styles.helperText, { color: theme.colors.textSecondary }]}>
-            Tap on time slots below to select
-          </Text>
         </View>
 
+        {/* Time Slots */}
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Available Time Slots</Text>
           {availableSlots.length === 0 ? (
-            <View style={[styles.emptySlots, { backgroundColor: theme.colors.card }]}>
-              <Ionicons name="time-outline" size={48} color={theme.colors.gray} />
+            <View style={[styles.emptySlots, { backgroundColor: theme.colors.surface }]}>
+              <Ionicons name="time-outline" size={48} color={theme.colors.textSecondary} />
               <Text style={[styles.emptyText, { color: theme.colors.textSecondary }]}>No slots available for this date</Text>
             </View>
           ) : (
@@ -265,13 +280,14 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
           )}
         </View>
 
+        {/* Selected Slots Summary */}
         {selectedSlots.length > 0 && (
           <View style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Selected Slots</Text>
             <View style={styles.selectedSlotsContainer}>
               {selectedSlots.map((slot) => (
-                <View key={slot.id} style={[styles.selectedSlotChip, { backgroundColor: theme.colors.lightGray, borderColor: theme.colors.primary }]}>
-                  <Text style={[styles.selectedSlotText, { color: theme.colors.text }]}>
+                <View key={slot.id} style={[styles.selectedSlotChip, { backgroundColor: theme.colors.primary + '10', borderColor: theme.colors.primary }]}>
+                  <Text style={[styles.selectedSlotText, { color: theme.colors.primary }]}>
                     {slot.startTime} - {slot.endTime}
                   </Text>
                   <TouchableOpacity onPress={() => toggleSlotSelection(slot)}>
@@ -282,8 +298,11 @@ const BookingSummaryScreen = ({ route, navigation }: any) => {
             </View>
           </View>
         )}
+        
+        <View style={{ height: 100 }} />
       </ScrollView>
 
+      {/* Footer */}
       <View style={[styles.footer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}>
         <View style={styles.totalContainer}>
           <View>
@@ -312,65 +331,108 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  headerContainer: {
+    overflow: 'hidden',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    backgroundColor: '#fff',
+  },
+  headerGradient: {
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+  },
+  headerContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500',
   },
   content: {
     flex: 1,
-  },
-  turfInfo: {
     padding: 20,
-    borderBottomWidth: 1,
+  },
+  card: {
+    padding: 20,
+    borderRadius: 16,
+    marginBottom: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   turfName: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '700',
     marginBottom: 8,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   location: {
     fontSize: 14,
+    fontWeight: '500',
   },
   section: {
-    padding: 20,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
   },
   dateCard: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderRadius: 12,
-    gap: 12,
+    borderRadius: 16,
+    gap: 16,
     borderWidth: 1,
+  },
+  iconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  dateLabel: {
+    fontSize: 12,
+    marginBottom: 4,
   },
   dateText: {
     fontSize: 16,
     fontWeight: '600',
   },
-  helperText: {
-    fontSize: 12,
-    marginTop: 8,
-  },
   emptySlots: {
     alignItems: 'center',
     padding: 40,
-    borderRadius: 12,
+    borderRadius: 16,
   },
   emptyText: {
     fontSize: 14,
@@ -388,9 +450,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 24,
     borderWidth: 1,
   },
   selectedSlotText: {
@@ -398,9 +460,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   footer: {
-    padding: 20,
+    padding: 24,
+    paddingBottom: 40,
     borderTopWidth: 1,
-    gap: 16,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 10,
+    gap: 20,
   },
   totalContainer: {
     flexDirection: 'row',
@@ -412,15 +482,17 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   totalAmount: {
-    fontSize: 24,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '800',
   },
   totalSlots: {
     fontSize: 12,
-    marginTop: 2,
+    marginTop: 4,
   },
   confirmButton: {
     width: '100%',
+    height: 56,
+    borderRadius: 16,
   },
 });
 

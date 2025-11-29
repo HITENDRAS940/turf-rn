@@ -12,10 +12,18 @@ import AdminTurfDetailScreen from '../screens/admin/AdminTurfDetailScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
+import CustomTabBar from '../components/shared/CustomTabBar';
+
 // Turfs Stack Navigator
 const TurfsStack = () => {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      screenOptions={{ 
+        headerShown: false,
+        animation: 'slide_from_right',
+        animationDuration: 200,
+      }}
+    >
       <Stack.Screen name="TurfManagementList" component={TurfManagementScreen} />
       <Stack.Screen name="AdminTurfDetail" component={AdminTurfDetailScreen} />
     </Stack.Navigator>
@@ -23,37 +31,12 @@ const TurfsStack = () => {
 };
 
 const AdminNavigator = () => {
-  const { theme } = useTheme();
-  
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap = 'home';
-
-          if (route.name === 'Dashboard') {
-            iconName = focused ? 'analytics' : 'analytics-outline';
-          } else if (route.name === 'Turfs') {
-            iconName = focused ? 'football' : 'football-outline';
-          } else if (route.name === 'Bookings') {
-            iconName = focused ? 'calendar' : 'calendar-outline';
-          } else if (route.name === 'More') {
-            iconName = focused ? 'menu' : 'menu-outline';
-          }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.gray,
+      tabBar={props => <CustomTabBar {...props} />}
+      screenOptions={{
         headerShown: false,
-        tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.border,
-          height: 80, // Increased height to accommodate extra padding
-          paddingBottom: 28, // Extra padding for phones with home indicator
-          paddingTop: 8,
-        },
-      })}
+      }}
     >
       <Tab.Screen name="Dashboard" component={DashboardScreen} />
       <Tab.Screen name="Turfs" component={TurfsStack} />

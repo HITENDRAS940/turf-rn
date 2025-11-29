@@ -7,8 +7,11 @@ import {
   RefreshControl,
   ActivityIndicator,
   Alert,
+  StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { bookingAPI } from '../../services/api';
 import { Booking } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -17,6 +20,7 @@ import EmptyState from '../../components/shared/EmptyState';
 
 const MyBookingsScreen = ({ navigation, route }: any) => {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -27,9 +31,9 @@ const MyBookingsScreen = ({ navigation, route }: any) => {
 
   const fetchBookings = async () => {
     try {
-      console.log('📋 Fetching user bookings...');
+      console.log('Fetching user bookings...');
       const response = await bookingAPI.getUserBookings();
-      console.log('📋 Bookings response:', response.data);
+      console.log('Bookings response:', response.data);
       
       let bookingsData = response.data;
       
@@ -79,7 +83,7 @@ const MyBookingsScreen = ({ navigation, route }: any) => {
   const handleBookingPress = (booking: Booking) => {
     // Navigate to booking details screen (implement if needed)
     console.log('📱 Booking pressed:', booking.id);
-    Alert.alert('Booking Details', `Booking #${booking.id} - ${booking.turfName}`);
+    // Alert.alert('Booking Details', `Booking #${booking.id} - ${booking.turfName}`);
   };
 
   const handleCancelBooking = async (booking: Booking) => {
@@ -161,16 +165,38 @@ const MyBookingsScreen = ({ navigation, route }: any) => {
     </View>
   );
 
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <LinearGradient
+        colors={[theme.colors.primary, theme.colors.secondary]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[styles.headerGradient, { paddingTop: insets.top + 10 }]}
+      >
+        <Text style={styles.headerTitle}>My Bookings</Text>
+        <Text style={styles.headerSubtitle}>Manage your upcoming games</Text>
+      </LinearGradient>
+    </View>
+  );
+
   if (loading) {
     return (
-      <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <StatusBar barStyle="light-content" />
         {renderLoadingState()}
-      </ScreenWrapper>
+      </View>
     );
   }
 
   return (
-    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <ScreenWrapper 
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      safeAreaEdges={['bottom', 'left', 'right']}
+    >
+      <StatusBar barStyle="light-content" />
+      
+      {renderHeader()}
+
       <FlatList
         data={bookings}
         renderItem={renderBookingCard}
@@ -202,8 +228,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  headerContainer: {
+    marginBottom: 0,
+  },
+  headerGradient: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
   listContent: {
     padding: 16,
+    paddingTop: 24,
     paddingBottom: 100, // Extra space for tab bar
   },
   emptyContent: {

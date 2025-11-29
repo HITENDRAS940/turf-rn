@@ -146,14 +146,7 @@ const AvailabilityModal: React.FC<Props> = ({
                 },
               ]}
             >
-              <View style={styles.headerLeft}>
-                <TouchableOpacity 
-                  onPress={handleClose} 
-                  disabled={loading}
-                  style={[styles.closeButton, { backgroundColor: theme.colors.background }]}
-                >
-                  <Ionicons name="close" size={24} color={theme.colors.text} />
-                </TouchableOpacity>
+              <View style={styles.headerTop}>
                 <View style={styles.titleContainer}>
                   <Text style={[styles.title, { color: theme.colors.text }]}>
                     Turf Availability
@@ -164,6 +157,13 @@ const AvailabilityModal: React.FC<Props> = ({
                     </Text>
                   )}
                 </View>
+                <TouchableOpacity 
+                  onPress={handleClose} 
+                  disabled={loading}
+                  style={[styles.closeButton, { backgroundColor: theme.colors.background }]}
+                >
+                  <Ionicons name="close" size={24} color={theme.colors.text} />
+                </TouchableOpacity>
               </View>
             </View>
 
@@ -354,40 +354,37 @@ const row = (icon: any, color: string, text: string) => (
 
 const styles = StyleSheet.create({
   header: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
     borderBottomWidth: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 3,
   },
-  headerLeft: {
+  headerTop: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-    flex: 1,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
   },
   titleContainer: {
     flex: 1,
   },
-  title: { fontSize: 20, fontWeight: "700" },
-  subtitle: { fontSize: 14, marginTop: 2 },
+  title: {
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    marginBottom: 4,
+  },
+  subtitle: { fontSize: 14 },
 
   fetchingContainer: {
     flexDirection: "row",

@@ -8,12 +8,13 @@ import {
   TextStyle,
   Animated,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../../contexts/ThemeContext';
 
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger';
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'gradient';
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
@@ -95,6 +96,18 @@ const Button: React.FC<ButtonProps> = ({
     }
   };
 
+  const renderButtonContent = () => (
+    <>
+      {loading ? (
+        <ActivityIndicator
+          color={variant === 'outline' ? theme.colors.primary : '#FFFFFF'}
+        />
+      ) : (
+        <Text style={[styles.text, getTextStyle(), textStyle]}>{title}</Text>
+      )}
+    </>
+  );
+
   return (
     <Animated.View
       style={[
@@ -107,7 +120,7 @@ const Button: React.FC<ButtonProps> = ({
       <TouchableOpacity
         style={[
           styles.button,
-          getButtonStyle(),
+          variant !== 'gradient' && getButtonStyle(),
           (disabled || loading) && styles.disabled,
           style,
         ]}
@@ -118,12 +131,17 @@ const Button: React.FC<ButtonProps> = ({
         activeOpacity={0.8}
         delayPressIn={0}
       >
-        {loading ? (
-          <ActivityIndicator
-            color={variant === 'outline' ? theme.colors.primary : '#FFFFFF'}
-          />
+        {variant === 'gradient' ? (
+          <LinearGradient
+            colors={[theme.colors.primary, theme.colors.secondary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.gradient, (disabled || loading) && styles.disabled]}
+          >
+            {renderButtonContent()}
+          </LinearGradient>
         ) : (
-          <Text style={[styles.text, getTextStyle(), textStyle]}>{title}</Text>
+          renderButtonContent()
         )}
       </TouchableOpacity>
     </Animated.View>
@@ -144,6 +162,12 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  gradient: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 12,
   },
 });
 

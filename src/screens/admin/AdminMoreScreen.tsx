@@ -6,11 +6,14 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
+import GradientHeader from '../../components/shared/GradientHeader';
 
 const AdminMoreScreen = () => {
   const { logout } = useAuth();
@@ -104,15 +107,22 @@ const AdminMoreScreen = () => {
     },
   ];
 
-  const renderMenuItem = (item: any) => (
+  const renderMenuItem = (item: any, index: number, isLast: boolean) => (
     <TouchableOpacity
       key={item.title}
-      style={[styles.menuItem, { backgroundColor: theme.colors.card, borderColor: theme.colors.border }]}
+      style={[
+        styles.menuItem, 
+        { 
+          backgroundColor: theme.colors.card, 
+          borderBottomWidth: isLast ? 0 : 1,
+          borderBottomColor: theme.colors.border
+        }
+      ]}
       onPress={item.onPress}
     >
       <View style={styles.menuItemLeft}>
         <View style={[styles.iconContainer, { backgroundColor: theme.colors.lightGray }]}>
-          <Ionicons name={item.icon} size={24} color={theme.colors.primary} />
+          <Ionicons name={item.icon} size={22} color={theme.colors.primary} />
         </View>
         <View style={styles.menuItemContent}>
           <Text style={[styles.menuItemTitle, { color: theme.colors.text }]}>{item.title}</Text>
@@ -125,37 +135,55 @@ const AdminMoreScreen = () => {
 
   const renderSection = (section: any) => (
     <View key={section.title} style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{section.title}</Text>
-      <View style={styles.sectionItems}>
-        {section.items.map(renderMenuItem)}
+      <Text style={[styles.sectionTitle, { color: theme.colors.textSecondary }]}>{section.title.toUpperCase()}</Text>
+      <View style={[
+        styles.sectionItems, 
+        { 
+          backgroundColor: theme.colors.card,
+          shadowColor: theme.colors.shadow,
+        }
+      ]}>
+        {section.items.map((item: any, index: number) => 
+          renderMenuItem(item, index, index === section.items.length - 1)
+        )}
       </View>
     </View>
   );
 
   return (
-    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>More</Text>
-        <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]}>Admin settings and options</Text>
-      </View>
+    <ScreenWrapper 
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      safeAreaEdges={['left', 'right', 'bottom']}
+    >
+      <GradientHeader
+        title="More"
+        subtitle="Admin settings and options"
+      />
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         {menuSections.map(renderSection)}
 
         <View style={styles.logoutSection}>
           <TouchableOpacity 
-            style={[styles.logoutButton, { borderColor: theme.colors.error, backgroundColor: theme.colors.card }]} 
+            style={[
+              styles.logoutButton, 
+              { 
+                borderColor: theme.colors.error, 
+                backgroundColor: theme.colors.card,
+                shadowColor: theme.colors.shadow,
+              }
+            ]} 
             onPress={handleLogout}
           >
             <Ionicons name="log-out-outline" size={24} color={theme.colors.error} />
             <Text style={[styles.logoutText, { color: theme.colors.error }]}>Logout</Text>
           </TouchableOpacity>
         </View>
-      </ScrollView>
 
-      <View style={[styles.footer, { backgroundColor: theme.colors.surface }]}>
-        <Text style={[styles.version, { color: theme.colors.textSecondary }]}>TurfBooking Admin v1.0.0</Text>
-      </View>
+        <View style={styles.footer}>
+          <Text style={[styles.version, { color: theme.colors.textSecondary }]}>TurfBooking Admin v1.0.0</Text>
+        </View>
+      </ScrollView>
     </ScreenWrapper>
   );
 };
@@ -164,16 +192,28 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    padding: 20,
+  headerGradient: {
+    paddingBottom: 24,
+    paddingHorizontal: 20,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  headerContent: {
+    paddingTop: 10,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 32,
+    fontWeight: '800',
+    color: '#FFFFFF',
     marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   headerSubtitle: {
-    fontSize: 14,
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500',
   },
   content: {
     flex: 1,
@@ -183,23 +223,28 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   section: {
-    marginBottom: 32,
+    marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
+    fontSize: 13,
+    fontWeight: '700',
+    marginBottom: 8,
+    marginLeft: 4,
+    letterSpacing: 0.5,
   },
   sectionItems: {
-    gap: 2,
+    borderRadius: 16,
+    overflow: 'hidden',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 16,
-    borderRadius: 12,
-    borderBottomWidth: 1,
   },
   menuItemLeft: {
     flexDirection: 'row',
@@ -207,9 +252,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -224,26 +269,30 @@ const styles = StyleSheet.create({
   },
   menuItemSubtitle: {
     fontSize: 13,
+    opacity: 0.8,
   },
   logoutSection: {
-    marginTop: 20,
-    paddingTop: 20,
+    marginTop: 8,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
     gap: 8,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   logoutText: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   footer: {
-    padding: 20,
+    marginTop: 32,
     alignItems: 'center',
   },
   version: {

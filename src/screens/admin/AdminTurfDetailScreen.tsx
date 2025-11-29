@@ -1,12 +1,14 @@
 // filepath: /Users/hitendrasingh/Desktop/EzTurf/src/screens/admin/AdminTurfDetailScreen.tsx
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, RefreshControl, Alert, StatusBar } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { adminAPI, turfAPI } from '../../services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { format } from 'date-fns';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Shared Components
 import RevenueCard from '../../components/shared/cards/RevenueCard';
@@ -69,6 +71,7 @@ const AdminTurfDetailScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { turf } = route.params;
   
   // State
@@ -407,26 +410,41 @@ const AdminTurfDetailScreen = () => {
   };
 
   return (
-    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]} safeAreaEdges={['top']}>
+    <ScreenWrapper 
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      safeAreaEdges={['bottom', 'left', 'right']}
+    >
+      <StatusBar barStyle="light-content" />
+      <StatusBar barStyle="light-content" />
+      
       {/* Header */}
-      <View style={[styles.header, { borderBottomColor: theme.colors.border || 'rgba(0,0,0,0.05)' }]}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
-          style={[styles.backButton, { backgroundColor: theme.colors.card }]}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={[theme.colors.primary, theme.colors.secondary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.headerGradient, { paddingTop: insets.top + 10 }]}
         >
-          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <View style={{ flex: 1, marginHorizontal: 12 }}>
-          <Text style={[styles.headerTitle, { color: theme.colors.text }]} numberOfLines={1}>
-            {turf.name}
-          </Text>
-          <View style={styles.headerLocationRow}>
-            <Ionicons name="location-outline" size={14} color={theme.colors.textSecondary} />
-            <Text style={[styles.headerSubtitle, { color: theme.colors.textSecondary }]} numberOfLines={1}>
-              {turf.location}
-            </Text>
+          <View style={styles.headerContent}>
+            <TouchableOpacity 
+              onPress={() => navigation.goBack()} 
+              style={styles.backButton}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {turf.name}
+              </Text>
+              <View style={styles.headerLocationRow}>
+                <Ionicons name="location-outline" size={14} color="rgba(255, 255, 255, 0.9)" />
+                <Text style={styles.headerSubtitle} numberOfLines={1}>
+                  {turf.location}
+                </Text>
+              </View>
+            </View>
           </View>
-        </View>
+        </LinearGradient>
       </View>
 
       {/* Management Action Buttons */}
@@ -625,39 +643,52 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  headerContainer: {
+    overflow: 'hidden',
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    backgroundColor: '#fff',
+  },
+  headerGradient: {
+    paddingBottom: 24,
+    paddingHorizontal: 24,
+  },
+  headerContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
   },
   backButton: {
     width: 40,
     height: 40,
     borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    marginRight: 16,
+  },
+  headerTextContainer: {
+    flex: 1,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
   },
   headerLocationRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
-    marginTop: 2,
   },
   headerSubtitle: {
-    fontSize: 12,
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
     fontWeight: '500',
-    flex: 1,
   },
   actionButtonsContainer: {
     paddingVertical: 12,
@@ -725,6 +756,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 20,
+    paddingBottom: 40,
   },
   bookingsContainer: {
     marginBottom: 20,

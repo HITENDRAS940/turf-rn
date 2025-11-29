@@ -9,7 +9,11 @@ import {
   Modal,
   TextInput,
   Keyboard,
+  Image,
+  StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { Ionicons } from '@expo/vector-icons';
 import { turfAPI } from '../../services/api';
@@ -22,6 +26,7 @@ import { Alert } from 'react-native';
 
 const TurfListScreen = ({ navigation }: any) => {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [turfs, setTurfs] = useState<Turf[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -135,12 +140,47 @@ const TurfListScreen = ({ navigation }: any) => {
   }
 
   return (
-    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Find Your Turf</Text>
-        <TouchableOpacity onPress={handleSearch}>
-          <Ionicons name="search-outline" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
+    <ScreenWrapper 
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      safeAreaEdges={['bottom', 'left', 'right']}
+    >
+      <StatusBar barStyle="light-content" />
+      
+      {/* Modern Header with Gradient */}
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={[theme.colors.primary, theme.colors.secondary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={[styles.headerGradient, { paddingTop: insets.top}]}
+        >
+          <View style={styles.headerContent}>
+            <View>
+              <Text style={styles.greetingText}>Welcome</Text>
+              <Text style={styles.headerTitle}>Find Your Turf</Text>
+            </View>
+            <TouchableOpacity style={styles.profileButton}>
+              <View style={styles.avatarPlaceholder}>
+                <Text style={styles.avatarText}>U</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          {/* Floating Search Bar */}
+          <TouchableOpacity 
+            style={styles.searchBar} 
+            onPress={handleSearch}
+            activeOpacity={0.5}
+          >
+            <Ionicons name="search" size={20} color={theme.colors.textSecondary} />
+            <Text style={[styles.searchPlaceholder, { color: theme.colors.textSecondary }]}>
+              Search by name or location...
+            </Text>
+            <View style={[styles.filterButton, { backgroundColor: theme.colors.lightGray }]}>
+              <Ionicons name="options-outline" size={18} color={theme.colors.primary} />
+            </View>
+          </TouchableOpacity>
+        </LinearGradient>
       </View>
 
       {turfs.length === 0 ? (
@@ -237,15 +277,77 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
+  headerContainer: {
+    marginBottom: 0,
+  },
+  headerGradient: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
+    marginTop: 5,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    marginBottom: 10,
+  },
+  greetingText: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginBottom: 3,
+    fontWeight: '900',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: -0.5,
+  },
+  profileButton: {
+    padding: 4,
+  },
+  avatarPlaceholder: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  avatarText: {
+    fontSize: 18,
     fontWeight: '700',
+    color: '#FFFFFF',
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
+    marginBottom: 0,
+  },
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: 15,
+  },
+  filterButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   list: {
     padding: 16,

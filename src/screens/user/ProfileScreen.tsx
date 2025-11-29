@@ -6,22 +6,22 @@ import {
   TouchableOpacity,
   ScrollView,
   Alert,
+  StatusBar,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
-import { COLORS } from '../../constants/colors';
 import { formatPhoneForDisplay } from '../../utils/phoneUtils';
 import ThemeSelector from '../../components/shared/ThemeSelector';
 
 const ProfileScreen = ({ navigation }: any) => {
   const { user, logout } = useAuth();
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [showThemeSelector, setShowThemeSelector] = useState(false);
-
-  // Debug: Log user data to see what's available
-  console.log('ProfileScreen - User data:', JSON.stringify(user, null, 2));
 
   const handleLogout = async () => {
     Alert.alert(
@@ -35,7 +35,6 @@ const ProfileScreen = ({ navigation }: any) => {
           onPress: async () => {
             try {
               await logout();
-              Alert.alert('Logged Out', 'You have been logged out successfully');
             } catch (error) {
               Alert.alert('Error', 'Failed to logout');
             }
@@ -96,12 +95,6 @@ const ProfileScreen = ({ navigation }: any) => {
           subtitle: 'Choose your preferred language',
           onPress: () => Alert.alert('Coming Soon', 'Language settings feature is under development'),
         },
-        {
-          icon: 'moon-outline',
-          title: 'Dark Mode',
-          subtitle: 'Included in theme selection',
-          onPress: () => setShowThemeSelector(true),
-        },
       ],
     },
     {
@@ -148,13 +141,15 @@ const ProfileScreen = ({ navigation }: any) => {
       onPress={item.onPress}
     >
       <View style={styles.menuItemLeft}>
-        <Ionicons name={item.icon} size={20} color={theme.colors.primary} />
+        <View style={[styles.iconContainer, { backgroundColor: theme.colors.lightGray }]}>
+          <Ionicons name={item.icon} size={20} color={theme.colors.primary} />
+        </View>
         <View style={styles.menuItemContent}>
           <Text style={[styles.menuItemText, { color: theme.colors.text }]}>{item.title}</Text>
           <Text style={[styles.menuItemSubtitle, { color: theme.colors.textSecondary }]}>{item.subtitle}</Text>
         </View>
       </View>
-      <Ionicons name="chevron-forward" size={20} color={theme.colors.gray} />
+      <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
     </TouchableOpacity>
   );
 
@@ -168,128 +163,161 @@ const ProfileScreen = ({ navigation }: any) => {
   );
 
   return (
-    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Profile</Text>
+    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <StatusBar barStyle="light-content" />
+      
+      <View style={styles.headerContainer}>
+        <LinearGradient
+          colors={[theme.colors.primary, theme.colors.secondary]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.headerGradient}
+        >
+          <Text style={styles.headerTitle}>Profile</Text>
+          
+          <View style={styles.profileCard}>
+            <View style={styles.avatarContainer}>
+              <View style={[styles.avatar, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
+                <Text style={styles.avatarText}>
+                  {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+                </Text>
+              </View>
+              <View style={styles.userInfo}>
+                <Text style={styles.userName}>
+                  {user?.name || 'User Name'}
+                </Text>
+                <Text style={styles.userPhone}>
+                  {formatPhoneForDisplay(user?.phone || '')}
+                </Text>
+                <View style={styles.roleBadge}>
+                  <Text style={styles.roleText}>
+                    {user?.role === 'ROLE_USER' ? 'USER' : 'ADMIN'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </View>
+        </LinearGradient>
       </View>
 
-      <ScrollView style={styles.content}>
-        <View style={[styles.profileCard, { backgroundColor: theme.colors.card }]}>
-          <View style={[styles.avatar, { backgroundColor: theme.colors.lightGray }]}>
-            <Ionicons name="person" size={40} color={theme.colors.primary} />
-          </View>
-          {user?.name && user.name.trim() !== '' ? (
-            <Text style={[styles.name, { color: theme.colors.text }]}>{user.name}</Text>
-          ) : (
-            <Text style={[styles.name, { color: theme.colors.text }]}>User Name Not Set</Text>
-          )}
-          <Text style={[styles.phone, { color: theme.colors.textSecondary }]}>
-            {formatPhoneForDisplay(user?.phone || '')}
-          </Text>
-          <View style={[styles.roleBadge, { backgroundColor: theme.colors.lightGray }]}>
-            <Text style={[styles.roleText, { color: theme.colors.primary }]}>
-              {user?.role === 'ROLE_USER' ? 'User' : 'Admin'}
-            </Text>
-          </View>
-        </View>
-
+      <ScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 + insets.bottom }]}
+      >
         {menuSections.map(renderSection)}
 
-        <TouchableOpacity style={[styles.logoutButton, { borderColor: theme.colors.error }]} onPress={handleLogout}>
+        <TouchableOpacity 
+          style={[styles.logoutButton, { borderColor: theme.colors.error, backgroundColor: theme.colors.surface }]} 
+          onPress={handleLogout}
+        >
           <Ionicons name="log-out-outline" size={20} color={theme.colors.error} />
           <Text style={[styles.logoutText, { color: theme.colors.error }]}>Logout</Text>
         </TouchableOpacity>
       </ScrollView>
 
-      <View style={styles.footer}>
-        <Text style={[styles.version, { color: theme.colors.textSecondary }]}>TurfBooking v1.0.0</Text>
-      </View>
-
       <ThemeSelector 
         visible={showThemeSelector} 
         onClose={() => setShowThemeSelector(false)} 
       />
-    </ScreenWrapper>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
   },
-  header: {
-    padding: 20,
-    backgroundColor: '#FFFFFF',
+  headerContainer: {
+    marginBottom: 0,
+  },
+  headerGradient: {
+    paddingTop: 45,
+    paddingHorizontal: 20,
+    paddingBottom: 18,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: '700',
-    color: COLORS.navy,
-  },
-  content: {
-    flex: 1,
+    color: '#FFFFFF',
+    marginBottom: 9,
   },
   profileCard: {
-    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 32,
-    margin: 16,
-    borderRadius: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+  },
+  avatarContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: COLORS.lightGray,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.3)',
   },
-  name: {
-    fontSize: 22,
+  avatarText: {
+    fontSize: 28,
     fontWeight: '700',
-    color: COLORS.navy,
-    marginBottom: 8,
-    textAlign: 'center',
+    color: '#FFFFFF',
   },
-  phone: {
+  userInfo: {
+    flex: 1,
+  },
+  userName: {
     fontSize: 20,
-    fontWeight: '600',
-    color: COLORS.navy,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  userPhone: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
     marginBottom: 8,
   },
   roleBadge: {
-    backgroundColor: COLORS.lightGray,
-    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
+    alignSelf: 'flex-start',
   },
   roleText: {
     fontSize: 12,
     fontWeight: '600',
-    color: COLORS.primary,
+    color: '#FFFFFF',
+  },
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 24,
+    paddingBottom: 100,
   },
   menuSection: {
-    marginHorizontal: 16,
-    marginBottom: 16,
+    marginHorizontal: 20,
+    marginBottom: 24,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.navy,
     marginBottom: 12,
     marginLeft: 4,
   },
   sectionItems: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
   },
   menuItem: {
     flexDirection: 'row',
@@ -297,52 +325,52 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   menuItemLeft: {
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
   },
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   menuItemContent: {
-    marginLeft: 12,
+    marginLeft: 16,
     flex: 1,
   },
   menuItemText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.navy,
     marginBottom: 2,
   },
   menuItemSubtitle: {
-    fontSize: 14,
-    color: COLORS.gray,
+    fontSize: 12,
   },
   logoutButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 12,
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 16,
-    marginTop: 16,
+    marginHorizontal: 20,
+    marginTop: 8,
     padding: 16,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: COLORS.red,
   },
   logoutText: {
     fontSize: 16,
     fontWeight: '600',
-    color: COLORS.red,
   },
   footer: {
     alignItems: 'center',
-    padding: 20,
+    padding: 24,
   },
   version: {
     fontSize: 12,
-    color: COLORS.gray,
   },
 });
 

@@ -21,30 +21,32 @@ export interface Theme {
     gray: string;
     lightGray: string;
     red: string;
+    shadow: string;
   };
 }
 
 export const themes: Record<string, Theme> = {
   default: {
     id: 'default',
-    name: 'Ocean Blue',
+    name: 'Modern Blue',
     colors: {
-      primary: '#2563EB',
-      secondary: '#1E40AF',
-      accent: '#3B82F6',
-      background: '#F9FAFB',
+      primary: '#4F46E5', // Indigo-600
+      secondary: '#4338CA', // Indigo-700
+      accent: '#818CF8', // Indigo-400
+      background: '#F8FAFC', // Slate-50
       surface: '#FFFFFF',
       card: '#FFFFFF',
-      text: '#1F2937',
-      textSecondary: '#6B7280',
-      border: '#E5E7EB',
-      success: '#10B981',
-      warning: '#F59E0B',
-      error: '#EF4444',
-      navy: '#1E293B',
-      gray: '#6B7280',
-      lightGray: '#F3F4F6',
-      red: '#DC2626',
+      text: '#0F172A', // Slate-900
+      textSecondary: '#64748B', // Slate-500
+      border: '#E2E8F0', // Slate-200
+      success: '#10B981', // Emerald-500
+      warning: '#F59E0B', // Amber-500
+      error: '#EF4444', // Red-500
+      navy: '#1E293B', // Slate-800
+      gray: '#94A3B8', // Slate-400
+      lightGray: '#F1F5F9', // Slate-100
+      red: '#EF4444',
+      shadow: '#000000',
     },
   },
   emerald: {
@@ -67,6 +69,7 @@ export const themes: Record<string, Theme> = {
       gray: '#6B7280',
       lightGray: '#F3F4F6',
       red: '#DC2626',
+      shadow: '#000000',
     },
   },
   purple: {
@@ -89,6 +92,7 @@ export const themes: Record<string, Theme> = {
       gray: '#6B7280',
       lightGray: '#F3F4F6',
       red: '#DC2626',
+      shadow: '#000000',
     },
   },
   dark: {
@@ -111,6 +115,7 @@ export const themes: Record<string, Theme> = {
       gray: '#94A3B8',
       lightGray: '#475569',
       red: '#EF4444',
+      shadow: '#000000',
     },
   },
 };

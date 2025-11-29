@@ -15,7 +15,11 @@ const AuthNavigator = () => {
 
   return (
     <Stack.Navigator 
-      screenOptions={{ headerShown: false }}
+      screenOptions={{ 
+        headerShown: false,
+        animation: 'slide_from_right',
+        animationDuration: 200,
+      }}
       initialRouteName={initialRouteName}
     >
       <Stack.Screen name="PhoneEntry" component={PhoneEntryScreen} />

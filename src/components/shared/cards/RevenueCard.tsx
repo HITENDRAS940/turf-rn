@@ -84,28 +84,29 @@ const RevenueCard: React.FC<RevenueCardProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
+    padding: 20,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
     elevation: 3,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
+    marginBottom: 20,
+    gap: 10,
   },
   title: {
     fontSize: 18,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   statsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
+    justifyContent: 'space-between',
     alignItems: 'center',
   },
   statItem: {
@@ -113,18 +114,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
     marginBottom: 4,
+    letterSpacing: -0.5,
   },
   statLabel: {
     fontSize: 12,
     textAlign: 'center',
+    fontWeight: '600',
+    opacity: 0.8,
   },
   divider: {
     width: 1,
     height: 40,
-    marginHorizontal: 8,
+    marginHorizontal: 12,
+    opacity: 0.5,
   },
 });
 

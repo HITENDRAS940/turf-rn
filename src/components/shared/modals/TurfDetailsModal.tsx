@@ -136,6 +136,9 @@ const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
   // -------------------------------
   // HEADER
   // -------------------------------
+  // -------------------------------
+  // HEADER
+  // -------------------------------
   const renderHeader = () => (
     <View
       style={[
@@ -146,21 +149,21 @@ const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
         },
       ]}
     >
-      <TouchableOpacity
-        onPress={handleClose}
-        style={[styles.closeButton, { backgroundColor: theme.colors.background }]}
-      >
-        <Ionicons name="close" size={24} color={theme.colors.text} />
-      </TouchableOpacity>
-
-      <View style={{ marginLeft: 16 }}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Edit Turf Details</Text>
-
-        {showSkipButton && (
-          <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-            Skip to Slots if no changes needed
-          </Text>
-        )}
+      <View style={styles.headerTop}>
+        <View>
+          <Text style={[styles.title, { color: theme.colors.text }]}>Edit Turf Details</Text>
+          {showSkipButton && (
+            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
+              Skip to Slots if no changes needed
+            </Text>
+          )}
+        </View>
+        <TouchableOpacity
+          onPress={handleClose}
+          style={[styles.closeButton, { backgroundColor: theme.colors.background }]}
+        >
+          <Ionicons name="close" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -293,26 +296,30 @@ const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
 // ----------------------------------
 const styles = StyleSheet.create({
   header: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingVertical: 20,
     borderBottomWidth: 1,
   },
+  headerTop: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: "center",
     alignItems: "center",
   },
   title: {
-    fontSize: 20,
-    fontWeight: "700",
+    fontSize: 24,
+    fontWeight: "800",
+    letterSpacing: -0.5,
+    marginBottom: 4,
   },
   subtitle: {
-    fontSize: 13,
-    marginTop: 4,
+    fontSize: 14,
   },
 
   bottomBar: {
@@ -320,7 +327,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
+    padding: 20,
     borderTopWidth: 1,
   },
 });

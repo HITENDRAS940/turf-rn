@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, StatusBar, Platform } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { AdminResponse } from '../../types';
+import GradientHeader from '../../components/shared/GradientHeader';
 
 const AdminDetailScreen = () => {
   const navigation = useNavigation<any>();
@@ -97,7 +98,9 @@ const AdminDetailScreen = () => {
   const InfoRow = ({ icon, label, value }: any) => (
     <View style={styles.infoRow}>
       <View style={styles.infoLeft}>
-        <Ionicons name={icon} size={20} color={theme.colors.textSecondary} />
+        <View style={[styles.iconContainer, { backgroundColor: theme.colors.surface }]}>
+          <Ionicons name={icon} size={16} color={theme.colors.textSecondary} />
+        </View>
         <Text style={[styles.infoLabel, { color: theme.colors.textSecondary }]}>{label}</Text>
       </View>
       <Text style={[styles.infoValue, { color: theme.colors.text }]}>{value}</Text>
@@ -105,23 +108,26 @@ const AdminDetailScreen = () => {
   );
 
   return (
-    <ScreenWrapper style={[styles.container, { backgroundColor: theme.colors.background }]} safeAreaEdges={['top']}>
-      {/* Header */}
-      <View style={[styles.header, { borderBottomColor: theme.colors.border || 'rgba(0,0,0,0.05)' }]}>
-        <TouchableOpacity 
-          onPress={() => navigation.goBack()} 
-          style={[styles.backButton, { backgroundColor: theme.colors.card }]}
-        >
-          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Admin Details</Text>
-        <View style={{ width: 40 }} />
-      </View>
+    <ScreenWrapper 
+      style={[styles.container, { backgroundColor: theme.colors.background }]}
+      safeAreaEdges={['left', 'right', 'bottom']}
+    >
+      <GradientHeader
+        title="Admin Details"
+        subtitle="Manage admin profile and permissions"
+        showBack={true}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Admin Info Card */}
-        <View style={[styles.adminCard, { backgroundColor: theme.colors.card }]}>
-          <View style={[styles.avatarContainer, { backgroundColor: theme.colors.primary + '20' }]}>
+        <View style={[
+          styles.adminCard, 
+          { 
+            backgroundColor: theme.colors.card,
+            shadowColor: theme.colors.shadow,
+          }
+        ]}>
+          <View style={[styles.avatarContainer, { backgroundColor: theme.colors.primary + '15' }]}>
             <Text style={[styles.avatarText, { color: theme.colors.primary }]}>
               {admin?.name?.charAt(0).toUpperCase() || 'A'}
             </Text>
@@ -150,7 +156,13 @@ const AdminDetailScreen = () => {
             {actionCards.map((card, index) => (
               <TouchableOpacity
                 key={index}
-                style={[styles.actionCard, { backgroundColor: theme.colors.card }]}
+                style={[
+                  styles.actionCard, 
+                  { 
+                    backgroundColor: theme.colors.card,
+                    shadowColor: theme.colors.shadow,
+                  }
+                ]}
                 onPress={card.action}
                 activeOpacity={0.7}
               >
@@ -161,7 +173,7 @@ const AdminDetailScreen = () => {
                 <Text style={[styles.actionSubtitle, { color: theme.colors.textSecondary }]}>
                   {card.subtitle}
                 </Text>
-                <View style={[styles.actionArrow, { backgroundColor: theme.colors.border || 'rgba(0,0,0,0.05)' }]}>
+                <View style={[styles.actionArrow, { backgroundColor: theme.colors.surface }]}>
                   <Ionicons name="arrow-forward" size={16} color={theme.colors.textSecondary} />
                 </View>
               </TouchableOpacity>
@@ -177,36 +189,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  headerGradient: {
+    paddingBottom: 20,
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+  },
+  headerContent: {
+    paddingTop: 10,
+    gap: 16,
   },
   backButton: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
   },
   headerTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  headerSubtitle: {
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500',
   },
   adminCard: {
     margin: 20,
     padding: 24,
-    borderRadius: 20,
+    borderRadius: 24,
     alignItems: 'center',
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 12,
@@ -221,19 +240,19 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   avatarText: {
-    fontSize: 36,
-    fontWeight: '700',
+    fontSize: 32,
+    fontWeight: '800',
   },
   adminName: {
     fontSize: 24,
-    fontWeight: '700',
+    fontWeight: '800',
     marginBottom: 4,
     textAlign: 'center',
   },
   businessName: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   statusBadge: {
     flexDirection: 'row',
@@ -242,7 +261,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 12,
     gap: 6,
-    marginBottom: 20,
+    marginBottom: 24,
   },
   statusDot: {
     width: 8,
@@ -251,13 +270,13 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   divider: {
     width: '100%',
     height: 1,
     backgroundColor: 'rgba(0,0,0,0.05)',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   infoRow: {
     flexDirection: 'row',
@@ -271,9 +290,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   infoLabel: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   infoValue: {
     fontSize: 14,
@@ -283,11 +309,11 @@ const styles = StyleSheet.create({
   },
   actionsSection: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 40,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     marginBottom: 16,
   },
   actionGrid: {
@@ -295,8 +321,7 @@ const styles = StyleSheet.create({
   },
   actionCard: {
     padding: 20,
-    borderRadius: 16,
-    shadowColor: '#000',
+    borderRadius: 20,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 8,
@@ -305,19 +330,20 @@ const styles = StyleSheet.create({
   actionIconContainer: {
     width: 48,
     height: 48,
-    borderRadius: 12,
+    borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   actionTitle: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
     marginBottom: 4,
   },
   actionSubtitle: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
+    paddingRight: 24,
   },
   actionArrow: {
     position: 'absolute',

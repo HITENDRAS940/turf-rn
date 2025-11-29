@@ -12,7 +12,13 @@ const Stack = createNativeStackNavigator();
 
 const ManagerNavigator = () => {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      screenOptions={{ 
+        headerShown: false,
+        animation: 'slide_from_right',
+        animationDuration: 200,
+      }}
+    >
       <Stack.Screen name="ManagerDashboard" component={ManagerDashboardScreen} />
       <Stack.Screen name="ManageAdmins" component={ManageAdminsScreen} />
       <Stack.Screen name="CreateAdmin" component={CreateAdminScreen} />
