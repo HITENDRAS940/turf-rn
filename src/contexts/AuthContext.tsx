@@ -1,6 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../types';
+import { jwtDecode } from 'jwt-decode';
+
+interface DecodedToken {
+  sub: string;
+  name?: string;
+  iat: number;
+  exp: number;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -28,6 +36,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const token = await AsyncStorage.getItem('token');
       if (userData && token) {
         const parsedUser = JSON.parse(userData);
+        
+        // Decode token to get latest user info
+        try {
+          const decoded: DecodedToken = jwtDecode(token);
+          if (decoded.name) {
+            parsedUser.name = decoded.name;
+          }
+        } catch (e) {
+          console.error('Error decoding token:', e);
+        }
+
         setUser({ ...parsedUser, token });
       }
     } catch (error) {
@@ -39,6 +58,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (userData: User) => {
     try {
+      // Decode token to get latest user info immediately on login
+      if (userData.token) {
+        try {
+          const decoded: DecodedToken = jwtDecode(userData.token);
+          if (decoded.name) {
+            userData.name = decoded.name;
+          }
+        } catch (e) {
+          console.error('Error decoding token during login:', e);
+        }
+      }
+
       await AsyncStorage.setItem('user', JSON.stringify(userData));
       await AsyncStorage.setItem('token', userData.token);
       setUser(userData);

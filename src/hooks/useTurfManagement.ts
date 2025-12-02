@@ -96,6 +96,7 @@ export const useTurfManagement = (options?: UseTurfManagementOptions) => {
     setError(null);
     try {
       const response = await adminAPI.updateTurf(turfId, turfData);
+      const successMsg = 'Turf updated successfully';
       Alert.alert('Success', successMsg);
 
       // Update local state
@@ -156,6 +157,7 @@ export const useTurfManagement = (options?: UseTurfManagementOptions) => {
         await adminAPI.setTurfNotAvailable(turfId);
       }
 
+      const successMsg = 'Availability updated successfully';
       Alert.alert('Success', successMsg);
 
       // Update local state

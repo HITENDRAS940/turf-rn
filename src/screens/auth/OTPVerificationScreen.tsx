@@ -67,6 +67,19 @@ const OTPVerificationScreen = ({ route, navigation }: any) => {
       const payload = JSON.parse(atob(token.split('.')[1]));
       const role = payload.role || 'ROLE_USER';
       const userId = payload.userId;
+      const name = payload.name;
+
+      // If name is missing in the token (new user or existing user without name),
+      // navigate to SetName screen to complete profile
+      if (!name && role === 'ROLE_USER') {
+        navigation.replace('SetName', {
+          token,
+          phone,
+          userId,
+          isNewUser: newUser
+        });
+        return;
+      }
 
       const userData = { 
         id: userId,
@@ -74,16 +87,12 @@ const OTPVerificationScreen = ({ route, navigation }: any) => {
         phone, 
         role, 
         isNewUser: newUser,
-        name: undefined // Initialize name as undefined, will be set later in SetNameScreen
+        name: name // Use the name from payload
       } as User;
 
       await login(userData);
       
-      // If it's a new user and not admin, navigate to set name screen
-      if (newUser && role === 'ROLE_USER') {
-        navigation.replace('SetName');
-        return;
-      }
+      Alert.alert('Success', role === 'ROLE_ADMIN' ? 'Welcome Admin!' : 'Login successful!');
       
       Alert.alert('Success', role === 'ROLE_ADMIN' ? 'Welcome Admin!' : 'Login successful!');
     } catch (error: any) {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_BASE_URL } from '../constants/config';
-import { CreateAdminPayload, AdminResponse, ManagerTurfResponse } from '../types';
+import { CreateAdminPayload, AdminResponse, ManagerTurfResponse, BookingRequest, BookingResponse } from '../types';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -40,7 +40,7 @@ api.interceptors.response.use(
 // Auth APIs
 export const authAPI = {
   sendOTP: (phone: string) => api.post('/auth/request-otp', { phone }),
-  verifyOTP: (phone: string, otp: string) => 
+  verifyOTP: (phone: string, otp: string) =>
     api.post(`/auth/verify-otp/${encodeURIComponent(phone)}`, { otp }),
 };
 
@@ -53,22 +53,17 @@ export const userAPI = {
 export const turfAPI = {
   getAllTurfs: () => api.get('/turfs'),
   getTurfById: (id: number) => api.get(`/turfs/${id}`),
-  getAvailableSlots: (turfId: number, date: string) => 
+  getAvailableSlots: (turfId: number, date: string) =>
     api.get(`/turfs/${turfId}/slots?date=${date}`),
-  getSlotAvailability: (turfId: number, date: string) => 
+  getSlotAvailability: (turfId: number, date: string) =>
     api.get(`/turf-slots/${turfId}/availability?date=${date}`),
-  getLowestPrice: (turfId: number) => 
+  getLowestPrice: (turfId: number) =>
     api.get(`/turfs/${turfId}/lowest-price`),
 };
 
 // Booking APIs
 export const bookingAPI = {
-  createBooking: (data: {
-    turfId: number;
-    slotIds: number[];
-    bookingDate: string;
-    paymentDetails: object;
-  }) => api.post('/bookings/user', data),
+  createBooking: (data: BookingRequest) => api.post<BookingResponse>('/bookings/user', data),
   getUserBookings: () => api.get('/user/bookings'),
   cancelBooking: (id: number) => api.delete(`/user/bookings/${id}`),
 };
@@ -81,27 +76,27 @@ export const adminAPI = {
   updateTurf: (id: number, data: any) => api.put(`/admin/turfs/${id}`, data),
   deleteTurf: (id: number) => api.delete(`/admin/turf/${id}`),
   updateSlotPricing: (data: any) => api.post('/admin/slots/pricing', data),
-  
+
   // Get turfs for specific admin
   getAdminTurfs: (userId: number) => api.get(`/admin/${userId}/turfs`),
-  
+
   // Get bookings for a specific turf
   getTurfBookings: async (turfId: number, date?: string) => {
-    const url = date 
-      ? `/admin/turf/${turfId}/bookings?date=${date}` 
+    const url = date
+      ? `/admin/turf/${turfId}/bookings?date=${date}`
       : `/admin/turf/${turfId}/bookings`;
     const response = await api.get(url);
     return response.data;
   },
-  
+
   // New Turf Creation Flow APIs
-  createTurfDetails: (data: { name: string; location: string; description: string; contactNumber?: string }) => 
+  createTurfDetails: (data: { name: string; location: string; description: string; contactNumber?: string }) =>
     api.post('/admin/turf-details', data),
-  updateTurfDetails: (turfId: number, data: { name: string; location: string; description: string; contactNumber?: string }) => 
+  updateTurfDetails: (turfId: number, data: { name: string; location: string; description: string; contactNumber?: string }) =>
     api.put(`/admin/turf/${turfId}`, data),
-  getTurfSlots: (turfId: number) => 
+  getTurfSlots: (turfId: number) =>
     api.get(`/admin/turf/${turfId}/slots`),
-  uploadTurfImages: (turfId: number, formData: FormData) => 
+  uploadTurfImages: (turfId: number, formData: FormData) =>
     api.post(`/admin/turf/${turfId}/images`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     }),
@@ -110,26 +105,26 @@ export const adminAPI = {
     console.log('📋 NEW API: Request payload (array format):', imageUrls);
     console.log('📡 NEW API: Making DELETE request to:', `/admin/turf/${turfId}/images`);
     console.log('📄 NEW API: Request body will be:', JSON.stringify(imageUrls));
-    
+
     // Send the array directly as the request body (not wrapped in an object)
-    return api.delete(`/admin/turf/${turfId}/images`, { 
+    return api.delete(`/admin/turf/${turfId}/images`, {
       data: imageUrls,  // Send array directly: ["url1", "url2"]
       headers: { 'Content-Type': 'application/json' }
     });
   },
-  updateSlotPrice: (turfId: number, slotId: number, price: number) => 
+  updateSlotPrice: (turfId: number, slotId: number, price: number) =>
     api.patch(`/admin/turf/${turfId}/slot/${slotId}/price?price=${price}`),
-  enableSlot: (turfId: number, slotId: number) => 
+  enableSlot: (turfId: number, slotId: number) =>
     api.patch(`/admin/turf/${turfId}/slot/${slotId}/enable`),
-  disableSlot: (turfId: number, slotId: number) => 
+  disableSlot: (turfId: number, slotId: number) =>
     api.patch(`/admin/turf/${turfId}/slot/${slotId}/disable`),
-  setTurfAvailable: (turfId: number) => 
+  setTurfAvailable: (turfId: number) =>
     api.patch(`/admin/turf/${turfId}/available`),
-  setTurfNotAvailable: (turfId: number) => 
+  setTurfNotAvailable: (turfId: number) =>
     api.patch(`/admin/turf/${turfId}/notAvailable`),
-  getTurfAvailability: (turfId: number) => 
+  getTurfAvailability: (turfId: number) =>
     api.get(`/admin/turf/${turfId}/availability`),
-  
+
   // Manual Booking by Admin
   createManualBooking: (data: { turfId: number; slotIds: number[]; bookingDate: string }) =>
     api.post('/admin/booking', data),
@@ -163,8 +158,8 @@ export const managerAPI = {
   },
 
   getTurfBookings: async (turfId: number, date?: string) => {
-    const url = date 
-      ? `/manager/turfs/${turfId}/bookings?date=${date}` 
+    const url = date
+      ? `/manager/turfs/${turfId}/bookings?date=${date}`
       : `/manager/turfs/${turfId}/bookings`;
     const response = await api.get(url);
     return response.data;

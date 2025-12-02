@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   View,
   Text,
@@ -20,10 +21,13 @@ import { Alert } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
 
-const SetNameScreen = () => {
+import { User } from '../../types';
+
+const SetNameScreen = ({ route, navigation }: any) => {
+  const { token, userId, phone, isNewUser } = route.params || {};
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user, updateUser } = useAuth();
+  const { login } = useAuth();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -40,19 +44,33 @@ const SetNameScreen = () => {
 
     setLoading(true);
     try {
+      // Store token temporarily for the API call to work
+      if (token) {
+        await AsyncStorage.setItem('token', token);
+      }
+
       await userAPI.setName(name.trim());
       
-      // Update user context to mark as not new user
-      if (user) {
-        await updateUser({ 
-          ...user, 
-          name: name.trim(), 
-          isNewUser: false 
-        });
-      }
+      // Construct full user object
+      const userData: User = {
+        id: userId,
+        token: token,
+        phone: phone,
+        role: 'ROLE_USER',
+        name: name.trim(),
+        isNewUser: false
+      };
+
+      // Complete login
+      await login(userData);
       
       Alert.alert('Welcome!', 'Your profile has been set up successfully');
+      // Navigation will be handled by AuthContext state change or we can force it if needed
+      // But usually login() updates state which triggers navigation in AppNavigator
     } catch (error: any) {
+      // If failed, remove the token we just set so we don't leave bad state
+      await AsyncStorage.removeItem('token');
+      
       Alert.alert('Error', error.response?.data?.message || 'Failed to set name');
     } finally {
       setLoading(false);

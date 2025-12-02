@@ -8,6 +8,7 @@ import { simulateCashfreePayment } from '../../utils/paymentUtils';
 import { bookingAPI } from '../../services/api';
 import { format } from 'date-fns';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BookingRequest, BookingResponse } from '../../types';
 
 const PAYMENT_METHODS = [
   { 
