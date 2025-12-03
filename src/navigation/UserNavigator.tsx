@@ -8,9 +8,6 @@ import TurfListScreen from '../screens/user/TurfListScreen';
 import TurfDetailScreen from '../screens/user/TurfDetailScreen';
 import MyBookingsScreen from '../screens/user/MyBookingsScreen';
 import ProfileScreen from '../screens/user/ProfileScreen';
-import UserDebugScreen from '../screens/UserDebugScreen';
-import ThemeShowcaseScreen from '../screens/ThemeShowcaseScreen';
-import BookingSummaryScreen from '../screens/user/BookingSummaryScreen';
 import PaymentSelectionScreen from '../screens/user/PaymentSelectionScreen';
 
 import { useTheme } from '../contexts/ThemeContext';
@@ -34,21 +31,6 @@ const ProfileStack = () => {
         component={ProfileScreen} 
         options={{ headerShown: false }}
       />
-      <Stack.Screen 
-        name="UserDebug" 
-        component={UserDebugScreen}
-        options={{ 
-          title: 'Debug Info',
-          headerShown: true,
-          headerStyle: { backgroundColor: theme.colors.primary },
-          headerTintColor: '#FFFFFF',
-        }}
-      />
-      <Stack.Screen 
-        name="ThemeShowcase" 
-        component={ThemeShowcaseScreen}
-        options={{ headerShown: false }}
-      />
     </Stack.Navigator>
   );
 };
@@ -68,11 +50,6 @@ const TurfStack = () => (
     <Stack.Screen 
       name="TurfDetail" 
       component={TurfDetailScreen}
-      options={{ headerShown: false }}
-    />
-    <Stack.Screen 
-      name="BookingSummary" 
-      component={BookingSummaryScreen}
       options={{ headerShown: false }}
     />
     <Stack.Screen 

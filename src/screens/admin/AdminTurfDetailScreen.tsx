@@ -87,7 +87,6 @@ const AdminTurfDetailScreen = () => {
   const [turfDetailsData, setTurfDetailsData] = useState<TurfDetailsData>({
     name: turf.name || '',
     location: turf.location || '',
-    price: '',
     amenities: '',
     description: turf.description || '',
   });
@@ -96,6 +95,7 @@ const AdminTurfDetailScreen = () => {
   const [imageUploading, setImageUploading] = useState(false);
   const [imageDeleting, setImageDeleting] = useState(false);
   const [currentTurfData, setCurrentTurfData] = useState(turf);
+  const [saveLoading, setSaveLoading] = useState(false);
 
   // Data Fetching
   useEffect(() => {
@@ -180,7 +180,6 @@ const AdminTurfDetailScreen = () => {
       setTurfDetailsData({
         name: turfData.name || '',
         location: turfData.location || '',
-        price: turfData.price?.toString() || '',
         amenities: turfData.amenities || '',
         description: turfData.description || '',
       });
@@ -276,6 +275,7 @@ const AdminTurfDetailScreen = () => {
 
   // Modal Callbacks
   const handleTurfDetailsSave = async (details: TurfDetailsData) => {
+    setSaveLoading(true);
     try {
       await adminAPI.updateTurfDetails(turf.id, {
         name: details.name,
@@ -289,6 +289,8 @@ const AdminTurfDetailScreen = () => {
       fetchTurfData();
     } catch (error: any) {
       Alert.alert('Error', error.response?.data?.message || 'Failed to update turf details');
+    } finally {
+      setSaveLoading(false);
     }
   };
 
@@ -593,7 +595,8 @@ const AdminTurfDetailScreen = () => {
         onClose={closeModal}
         onSave={handleTurfDetailsSave}
         initialData={turfDetailsData}
-        showSkipButton={false}
+        isEditMode={true}
+        loading={saveLoading}
       />
 
       <SlotsManagementModal

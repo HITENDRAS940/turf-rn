@@ -7,21 +7,27 @@ import {
   ScrollView,
   Alert,
   StatusBar,
+  Modal,
+  TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ScreenWrapper } from '../../components/shared/ScreenWrapper';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { formatPhoneForDisplay } from '../../utils/phoneUtils';
-import ThemeSelector from '../../components/shared/ThemeSelector';
+import { userAPI } from '../../services/api';
 
 const ProfileScreen = ({ navigation }: any) => {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
-  const [showThemeSelector, setShowThemeSelector] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState('');
+  const [isSavingName, setIsSavingName] = useState(false);
 
   const handleLogout = async () => {
     Alert.alert(
@@ -44,27 +50,53 @@ const ProfileScreen = ({ navigation }: any) => {
     );
   };
 
+  const handleUpdateName = async () => {
+    if (!newName.trim()) {
+      Alert.alert('Error', 'Name cannot be empty');
+      return;
+    }
+
+    if (newName.trim() === user?.name) {
+      setIsEditingName(false);
+      return;
+    }
+
+    setIsSavingName(true);
+    try {
+      await userAPI.setName(newName.trim());
+      if (user) {
+        await updateUser({ ...user, name: newName.trim() });
+      }
+      setIsEditingName(false);
+      Alert.alert('Success', 'Name updated successfully');
+    } catch (error) {
+      console.error('Failed to update name:', error);
+      Alert.alert('Error', 'Failed to update name. Please try again.');
+    } finally {
+      setIsSavingName(false);
+    }
+  };
+
+  const openEditNameModal = () => {
+    setNewName(user?.name || '');
+    setIsEditingName(true);
+  };
+
   const menuSections = [
     {
       title: 'Account',
       items: [
         {
           icon: 'person-outline',
-          title: 'Edit Profile',
-          subtitle: 'Update your personal information',
-          onPress: () => Alert.alert('Coming Soon', 'Profile editing feature is under development'),
+          title: 'Edit Name',
+          subtitle: 'Update your name',
+          onPress: openEditNameModal,
         },
         {
           icon: 'card-outline',
           title: 'Payment Methods',
           subtitle: 'Manage your payment options',
           onPress: () => Alert.alert('Coming Soon', 'Payment methods feature is under development'),
-        },
-        {
-          icon: 'location-outline',
-          title: 'Saved Addresses',
-          subtitle: 'Manage your saved locations',
-          onPress: () => Alert.alert('Coming Soon', 'Saved addresses feature is under development'),
         },
       ],
     },
@@ -76,18 +108,6 @@ const ProfileScreen = ({ navigation }: any) => {
           title: 'Notifications',
           subtitle: 'Manage notification settings',
           onPress: () => Alert.alert('Coming Soon', 'Notification settings feature is under development'),
-        },
-        {
-          icon: 'color-palette-outline',
-          title: 'App Theme',
-          subtitle: 'Choose your preferred theme',
-          onPress: () => setShowThemeSelector(true),
-        },
-        {
-          icon: 'eye-outline',
-          title: 'Theme Showcase',
-          subtitle: 'Preview all available themes',
-          onPress: () => navigation.navigate('ThemeShowcase'),
         },
         {
           icon: 'language-outline',
@@ -105,12 +125,6 @@ const ProfileScreen = ({ navigation }: any) => {
           title: 'Help & Support',
           subtitle: 'Get help and contact support',
           onPress: () => Alert.alert('Coming Soon', 'Help & support feature is under development'),
-        },
-        {
-          icon: 'bug-outline',
-          title: 'Debug Info',
-          subtitle: 'View user data for debugging',
-          onPress: () => navigation.navigate('UserDebug'),
         },
         {
           icon: 'star-outline',
@@ -216,10 +230,60 @@ const ProfileScreen = ({ navigation }: any) => {
         </TouchableOpacity>
       </ScrollView>
 
-      <ThemeSelector 
-        visible={showThemeSelector} 
-        onClose={() => setShowThemeSelector(false)} 
-      />
+
+      <Modal
+        visible={isEditingName}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsEditingName(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <View style={[styles.modalContent, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>Edit Name</Text>
+            
+            <TextInput
+              style={[
+                styles.input, 
+                { 
+                  color: theme.colors.text,
+                  backgroundColor: theme.colors.background,
+                  borderColor: theme.colors.border 
+                }
+              ]}
+              value={newName}
+              onChangeText={setNewName}
+              placeholder="Enter your name"
+              placeholderTextColor={theme.colors.textSecondary}
+              autoFocus={true}
+            />
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton, { borderColor: theme.colors.border }]}
+                onPress={() => setIsEditingName(false)}
+                disabled={isSavingName}
+              >
+                <Text style={[styles.modalButtonText, { color: theme.colors.text }]}>Cancel</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.modalButton, styles.saveButton, { backgroundColor: theme.colors.primary }]}
+                onPress={handleUpdateName}
+                disabled={isSavingName}
+              >
+                {isSavingName ? (
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                ) : (
+                  <Text style={[styles.modalButtonText, { color: '#FFFFFF' }]}>Save</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 };
@@ -239,6 +303,7 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 30,
   },
   headerTitle: {
+    paddingLeft: 9,
     fontSize: 28,
     fontWeight: '700',
     color: '#FFFFFF',
@@ -371,6 +436,57 @@ const styles = StyleSheet.create({
   },
   version: {
     fontSize: 12,
+  },
+
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    borderRadius: 20,
+    padding: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    marginBottom: 24,
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    borderWidth: 1,
+    backgroundColor: 'transparent',
+  },
+  saveButton: {
+    
+  },
+  modalButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

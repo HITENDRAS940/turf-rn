@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { ScreenWrapper } from "../ScreenWrapper";
 import { Ionicons } from "@expo/vector-icons";
@@ -23,7 +24,6 @@ import FormField from "../FormField";
 import {
   validateTurfName,
   validateLocation,
-  validatePrice,
   validateDescription,
   validateAmenities,
 } from "../../../utils/validationUtils";
@@ -31,7 +31,6 @@ import {
 export interface TurfDetailsData {
   name: string;
   location: string;
-  price: string;
   amenities: string;
   description: string;
 }
@@ -40,20 +39,18 @@ interface TurfDetailsModalProps {
   visible: boolean;
   onClose: () => void;
   onSave: (details: TurfDetailsData) => void;
-  onSkipToSlots?: () => void;
   initialData: TurfDetailsData;
   loading?: boolean;
-  showSkipButton?: boolean;
+  isEditMode?: boolean;
 }
 
 const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
   visible,
   onClose,
   onSave,
-  onSkipToSlots,
   initialData,
   loading = false,
-  showSkipButton = false,
+  isEditMode = false,
 }) => {
   const { theme } = useTheme();
 
@@ -92,7 +89,6 @@ const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
     const validations = {
       name: validateTurfName(formData.name),
       location: validateLocation(formData.location),
-      price: validatePrice(formData.price),
       amenities: validateAmenities(formData.amenities),
       description: validateDescription(formData.description),
     };
@@ -124,18 +120,6 @@ const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
     }, 300);
   };
 
-  const handleSkipToSlots = () => {
-    if (onSkipToSlots) {
-      setIsClosing(true);
-      setTimeout(() => {
-        onSkipToSlots();
-      }, 300);
-    }
-  };
-
-  // -------------------------------
-  // HEADER
-  // -------------------------------
   // -------------------------------
   // HEADER
   // -------------------------------
@@ -151,12 +135,9 @@ const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
     >
       <View style={styles.headerTop}>
         <View>
-          <Text style={[styles.title, { color: theme.colors.text }]}>Edit Turf Details</Text>
-          {showSkipButton && (
-            <Text style={[styles.subtitle, { color: theme.colors.textSecondary }]}>
-              Skip to Slots if no changes needed
-            </Text>
-          )}
+          <Text style={[styles.title, { color: theme.colors.text }]}>
+            {isEditMode ? "Edit Turf Details" : "Create New Turf"}
+          </Text>
         </View>
         <TouchableOpacity
           onPress={handleClose}
@@ -191,17 +172,6 @@ const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
         error={errors.location}
         placeholder="Enter location"
         onChange={(v) => handleChange("location", v)}
-      />
-
-      <FormField
-        label="Base Price (₹/hour)"
-        icon="pricetag-outline"
-        required
-        keyboardType="numeric"
-        value={formData.price}
-        error={errors.price}
-        placeholder="Enter base price"
-        onChange={(v) => handleChange("price", v)}
       />
 
       <FormField
@@ -267,23 +237,25 @@ const TurfDetailsModal: React.FC<TurfDetailsModalProps> = ({
                 },
               ]}
             >
-              {showSkipButton && onSkipToSlots && (
-                <Button
-                  title="Skip to Slots"
-                  variant="outline"
-                  style={{ marginBottom: 10 }}
-                  onPress={handleSkipToSlots}
-                  disabled={loading}
-                />
-              )}
-
               <Button
-                title={loading ? "Saving..." : "Save & Continue"}
+                title={loading ? "Saving..." : (isEditMode ? "Save Changes" : "Create Turf")}
                 onPress={handleSave}
                 loading={loading}
                 disabled={loading}
               />
             </View>
+
+            {/* Loading Overlay */}
+            {loading && (
+              <View style={[styles.loadingOverlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
+                <View style={[styles.loadingContainer, { backgroundColor: theme.colors.card }]}>
+                  <ActivityIndicator size="large" color={theme.colors.primary} />
+                  <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+                    {isEditMode ? "Making changes please wait..." : "Creating new Turf please wait..."}
+                  </Text>
+                </View>
+              </View>
+            )}
           </View>
         </KeyboardAvoidingView>
       </ScreenWrapper>
@@ -329,6 +301,29 @@ const styles = StyleSheet.create({
     right: 0,
     padding: 20,
     borderTopWidth: 1,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    padding: 24,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
+    minWidth: 200,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
 

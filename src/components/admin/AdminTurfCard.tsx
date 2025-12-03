@@ -1,186 +1,178 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Turf } from '../../types';
 import { useTheme } from '../../contexts/ThemeContext';
-import { formatPhoneForDisplay } from '../../utils/phoneUtils';
 
 interface AdminTurfCardProps {
   turf: Turf;
   onPress?: () => void;
 }
 
+const { width } = Dimensions.get('window');
+const CARD_WIDTH = width - 40; // Full width minus padding
+
 const AdminTurfCard: React.FC<AdminTurfCardProps> = ({
   turf,
   onPress,
 }) => {
   const { theme } = useTheme();
+  const styles = createStyles(theme);
   
   const availabilityStatus = turf.availability ?? true;
-  const hasImages = turf.images && turf.images.length > 0;
+  const statusColor = availabilityStatus ? theme.colors.success : theme.colors.error;
 
   return (
-    <TouchableOpacity 
-      style={[styles.card, { 
-        backgroundColor: theme.colors.surface,
-        shadowColor: theme.colors.gray 
-      }]} 
-      onPress={onPress}
-      disabled={!onPress}
-    >
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={[styles.name, { color: theme.colors.text }]}>{turf.name}</Text>
-          <Text style={[styles.location, { color: theme.colors.textSecondary }]}>{turf.location}</Text>
-        </View>
-        <View style={styles.headerRight}>
-          <Ionicons name="chevron-forward" size={20} color={theme.colors.textSecondary} />
-        </View>
+    <View style={[styles.card, { backgroundColor: theme.colors.card }]}>
+      {/* Status Border (Top) */}
+      <View style={[styles.statusBorder, { backgroundColor: statusColor }]} />
+
+      {/* Watermark Icon */}
+      <View style={styles.watermarkContainer}>
+        <Ionicons 
+          name="football-outline" 
+          size={180} 
+          color={theme.colors.lightGray} 
+          style={{ opacity: 0.2 }} 
+        />
       </View>
 
-      <View style={[styles.divider, { backgroundColor: theme.colors.border }]} />
-
-      <View style={styles.content}>
-        <View style={styles.infoRow}>
-          <Ionicons name="star-outline" size={16} color={theme.colors.warning} />
-          <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>Rating: {turf.rating || 'N/A'}</Text>
-        </View>
-
-        {turf.contactNumber && (
-          <View style={styles.infoRow}>
-            <Ionicons name="call-outline" size={16} color={theme.colors.textSecondary} />
-            <Text style={[styles.infoText, { color: theme.colors.textSecondary }]}>{formatPhoneForDisplay(turf.contactNumber)}</Text>
-          </View>
-        )}
-
-        {turf.description && (
-          <View style={styles.descriptionContainer}>
-            <Text style={[styles.descriptionLabel, { color: theme.colors.text }]}>Description:</Text>
-            <Text style={[styles.descriptionText, { color: theme.colors.textSecondary }]} numberOfLines={3}>
-              {turf.description}
+      <View style={styles.contentContainer}>
+        <View style={styles.mainInfo}>
+          {/* Status Badge */}
+          <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
+            <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+            <Text style={[styles.statusText, { color: statusColor }]}>
+              {availabilityStatus ? 'Active' : 'Inactive'}
             </Text>
           </View>
-        )}
-      </View>
 
-      <View style={[styles.footer, { borderTopColor: theme.colors.border }]}>
-        <View style={styles.statusIndicator}>
-          <View style={[
-            styles.statusDot, 
-            { backgroundColor: availabilityStatus ? theme.colors.success : theme.colors.error }
-          ]} />
-          <Text style={[
-            styles.statusText,
-            { color: availabilityStatus ? theme.colors.success : theme.colors.error }
-          ]}>
-            {availabilityStatus ? 'Active' : 'Inactive'}
+          {/* Name */}
+          <Text style={[styles.name, { color: theme.colors.text }]}>
+            {turf.name}
           </Text>
-        </View>
-        <View style={styles.footerRight}>
-          {hasImages && (
-            <Text style={[styles.imageCount, { color: theme.colors.primary }]}>
-              📷 {turf.images!.length} image{turf.images!.length !== 1 ? 's' : ''}
+
+          {/* Location */}
+          <View style={styles.locationRow}>
+            <Ionicons name="location-outline" size={18} color={theme.colors.textSecondary} />
+            <Text style={[styles.location, { color: theme.colors.textSecondary }]} numberOfLines={1}>
+              {turf.location}
             </Text>
-          )}
-          <Text style={[styles.turfId, { color: theme.colors.textSecondary }]}>ID: {turf.id}</Text>
+          </View>
         </View>
+
+        {/* Manage Button */}
+        <TouchableOpacity 
+          style={styles.manageButton}
+          onPress={onPress}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={[theme.colors.primary, theme.colors.secondary]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.manageButtonGradient}
+          >
+            <Text style={styles.manageButtonText}>Manage</Text>
+          </LinearGradient>
+        </TouchableOpacity>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 };
 
-const styles = StyleSheet.create({
+const createStyles = (theme: any) => StyleSheet.create({
   card: {
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 20,
     marginBottom: 16,
-    elevation: 2,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    flexDirection: 'column',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 4,
+    width: CARD_WIDTH,
+    aspectRatio: 4/3,
+    position: 'relative',
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 12,
+  statusBorder: {
+    width: '100%',
+    height: 6,
   },
-  headerLeft: {
+  watermarkContainer: {
+    position: 'absolute',
+    right: -20,
+    bottom: -20,
+    zIndex: 0,
+    transform: [{ rotate: '-15deg' }],
+  },
+  contentContainer: {
     flex: 1,
-  },
-  headerRight: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  name: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  location: {
-    fontSize: 14,
-  },
-  divider: {
-    height: 1,
-    marginBottom: 12,
-  },
-  content: {
-    gap: 8,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  infoText: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  descriptionContainer: {
-    marginTop: 8,
-  },
-  descriptionLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  descriptionText: {
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  footer: {
-    flexDirection: 'row',
+    padding: 24,
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
+    zIndex: 1,
   },
-  statusIndicator: {
+  mainInfo: {
+    flex: 1,
+    gap: 12,
+  },
+  statusBadge: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    gap: 4,
   },
   statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   statusText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  footerRight: {
-    alignItems: 'flex-end',
-  },
-  imageCount: {
     fontSize: 10,
-    fontWeight: '600',
-    marginBottom: 2,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
-  turfId: {
-    fontSize: 12,
+  name: {
+    fontSize: 28,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    lineHeight: 34,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  location: {
+    fontSize: 16,
     fontWeight: '500',
+  },
+  manageButton: {
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: theme.colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+    marginTop: 'auto',
+    width: '100%',
+  },
+  manageButtonGradient: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 14,
+  },
+  manageButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
 });
 
